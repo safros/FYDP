@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Opti</title>
+    <style>
+        .message {
+            padding: 10px;
+            margin: 5px;
+            background-color: #f3f3f3
+        }
+        nav a {
+            color: #d64161;
+            font-size: 3em;
+            margin-left: 50px;
+            text-decoration: none;
+        }
+
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('index') }}">FlaskApp</a>
+        <a href="/model">About the Model</a>
+	    <a href="/instructions">How to format the CSV</a>
+    </nav>
+    <hr>
+    <div class="content">
+    		<h1>This app... </h1>
+    		<form method='post' action='/' enctype='multipart/form-data'>
+              Upload a csv file: <input type='file' name='file'>
+              <input type='submit' value='Upload'>
+            </form>
+    </div>
+</body>
+</html>
