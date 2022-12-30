@@ -45,7 +45,7 @@ def index ():
         truckData.to_sql('truck', con=db.engine, if_exists='replace', index_label='id')
         demandData.to_sql('demand', con=db.engine, if_exists='replace', index_label='id')
         #db.session.commit()
-        return redirect(url_for('upload_csv'))
+        return redirect(url_for('model.html'))
 
     return render_template('index.html')
 
