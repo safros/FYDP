@@ -10,6 +10,7 @@ from openpyxl import Workbook
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db = SQLAlchemy(app)
 app.app_context().push()
 
@@ -44,8 +45,9 @@ def index ():
         distanceData.to_sql('distance', con=db.engine, if_exists='replace', index_label='id')
         truckData.to_sql('truck', con=db.engine, if_exists='replace', index_label='id')
         demandData.to_sql('demand', con=db.engine, if_exists='replace', index_label='id')
-        #db.session.commit()
-        return redirect(url_for('model.html'))
+        list = db.engine.execute("SELECT * FROM cost").fetchall()
+        print(list)
+        return render_template('model.html')
 
     return render_template('index.html')
 
