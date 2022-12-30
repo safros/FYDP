@@ -46,7 +46,7 @@ def index ():
         truckData.to_sql('truck', con=db.engine, if_exists='replace', index_label='id')
         demandData.to_sql('demand', con=db.engine, if_exists='replace', index_label='id')
         list = db.engine.execute("SELECT * FROM cost").fetchall()
-        print(list)
+        #print(list)
         return render_template('model.html')
 
     return render_template('index.html')
