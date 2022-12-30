@@ -1,10 +1,12 @@
 #main.py
 #https://gist.github.com/dasdachs/69c42dfcfbf2107399323a4c86cdb791
+import os
 import csv
 from io import TextIOWrapper
 from flask import Flask, render_template, request, redirect, url_for
 import pandas as pd
 from flask_sqlalchemy import SQLAlchemy
+from openpyxl import Workbook
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
@@ -29,19 +31,19 @@ def index ():
         csv_file = request.files['file']
         #csv_file = TextIOWrapper(csv_file, encoding='utf-8')
         #csv_reader = csv.reader(csv_file, delimiter=',')
-        costData = pd.read_excel(csv_file, 'Cost')
-        distanceData = pd.read_excel(csv_file, 'Distance')
-        truckData = pd.read_excel(csv_file, 'Truck')
+        costData = pd.read_excel(csv_file, 'cost')
+        distanceData = pd.read_excel(csv_file, 'distance')
+        truckData = pd.read_excel(csv_file, 'truck')
         demandData = pd.read_excel(csv_file,'demand')
         #for row in csv_reader:
         #user = User(username=row[0], email=row[1])
         #db.session.add(user)
         #dataDB = DataForModel(cost=row[0])
         #db.session.add(dataDB)
-        costData.to_sql('cost', con=db, if_exists='replace', index_label='id')
-        distanceData.to_sql('distance', con=db, if_exists='replace', index_label='id')
-        truckData.to_sql('truck', con=db, if_exists='replace', index_label='id')
-        demandData.to_sql('demand', con=db, if_exists='replace', index_label='id')
+        costData.to_sql('cost', con=db.engine, if_exists='replace')
+        distanceData.to_sql('distance', con=db.engine, if_exists='replace', index_label='id')
+        truckData.to_sql('truck', con=db.engine, if_exists='replace', index_label='id')
+        demandData.to_sql('demand', con=db.engine, if_exists='replace', index_label='id')
         #db.session.commit()
         return redirect(url_for('upload_csv'))
 
