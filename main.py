@@ -45,9 +45,10 @@ def index ():
         distanceData.to_sql('distance', con=db.engine, if_exists='replace', index_label='id')
         truckData.to_sql('truck', con=db.engine, if_exists='replace', index_label='id')
         demandData.to_sql('demand', con=db.engine, if_exists='replace', index_label='id')
-        list = db.engine.execute("SELECT * FROM cost").fetchall()
+        #list = db.engine.execute("SELECT * FROM cost").fetchall()
         #print(list)
-        return render_template('model.html')
+        db.session.commit()
+        return render_template('dbview.html')
 
     return render_template('index.html')
 
@@ -58,6 +59,11 @@ def instructions():
 @app.route("/model")
 def display():
     return render_template('model.html')
+
+@app.route("/viewEntries")
+def viewEntries ():
+    list = db.engine.execute("SELECT * FROM cost").fetchall()
+    return render_template('dbview.html',list=list)
 
 @app.route("/upload_csv")
 def view ():
