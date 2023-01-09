@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VIEW the new tables</title>
+
+    <style>
+        .message {
+            padding: 10px;
+            margin: 5px;
+            background-color: #f3f3f3
+        }
+        nav a {
+            color: #d64161;
+            font-size: 3em;
+            margin-left: 50px;
+            text-decoration: none;
+        }
+
+    </style>
+</head>
+<body>
+<nav>
+        <a href="/">FlaskApp</a>
+        <a href="/model">About the Model</a>
+	    <a href="/instructions">How to format the CSV</a>
+        <a href="/dbview">DBVIEW</a>
+    </nav>
+    <div class="content">
+    		{% for li in list %}
+            <h2>{{li[0]}}</h2>
+            <h2>{{li[:]}}</h2>
+            {% endfor %}
+    </div>
+</body>
+</html>

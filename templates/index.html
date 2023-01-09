@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
     <meta charset="UTF-8">
     <title>Opti</title>
     <style>
@@ -23,6 +24,7 @@
         <a href="{{ url_for('index') }}">FlaskApp</a>
         <a href="/model">About the Model</a>
 	    <a href="/instructions">How to format the CSV</a>
+        <a href="/dbview">DBVIEW</a>
     </nav>
     <hr>
     <div class="content">
