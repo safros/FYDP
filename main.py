@@ -45,10 +45,10 @@ def index ():
         distanceData.to_sql('distance', con=db.engine, if_exists='replace', index_label='id')
         truckData.to_sql('truck', con=db.engine, if_exists='replace', index_label='id')
         demandData.to_sql('demand', con=db.engine, if_exists='replace', index_label='id')
-        #list = db.engine.execute("SELECT * FROM cost").fetchall()
-        #print(list)
+        list = db.engine.execute("SELECT * FROM cost").fetchall()
+        print(list)
         db.session.commit()
-        return render_template('dbview.html')
+        return render_template('dbview.html',list=list)
 
     return render_template('index.html')
 
