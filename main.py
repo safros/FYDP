@@ -60,7 +60,7 @@ def instructions():
 def display():
     return render_template('model.html')
 
-@app.route("/viewEntries")
+@app.route("/dbview")
 def viewEntries ():
     list = db.engine.execute("SELECT * FROM cost").fetchall()
     return render_template('dbview.html',list=list)
