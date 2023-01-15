@@ -75,7 +75,7 @@ def runModel ():
     #running the opti on Gurobi
 
     #display a map of the final solution
-    
+
     return render_template('modelRun.html')
 
 def heuristic():
