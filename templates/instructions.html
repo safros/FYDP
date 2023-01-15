@@ -1,32 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
     <meta charset="UTF-8">
     <title>How to fill in the CSV</title>
     <meta charset="UTF-8">
     <title>Opti</title>
-    <style>
-        .message {
-            padding: 10px;
-            margin: 5px;
-            background-color: #f3f3f3
-        }
-        nav a {
-            color: #d64161;
-            font-size: 3em;
-            margin-left: 50px;
-            text-decoration: none;
-        }
 
-    </style>
 </head>
 <body>
-    <nav>
-        <a href="/">FlaskApp</a>
-        <a href="/model">About the Model</a>
-	    <a href="/instructions">How to format the CSV</a>
-        <a href="/dbview">DBVIEW</a>
-    </nav>
+    <header>
+        <div class="nav">
+          <ul>
+            <li class="home"><a href="/">Upload the Excel Sheet</a></li>
+            <li class="models"><a href="/model">About this Model</a></li>
+            <li class="about"><a href="/instructions">How to Format your Excel Sheet</a></li>
+            <li class="view"><a href="/dbview">View your Excel Sheet</a></li>
+          </ul>
+        </div>
+      </header>
 
     <div class="content">
     		<h1>How to format the CSV is you put X on the first tab</h1>

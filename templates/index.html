@@ -5,33 +5,36 @@
     <meta charset="UTF-8">
     <title>Opti</title>
     <style>
-        .message {
-            padding: 10px;
-            margin: 5px;
-            background-color: #f3f3f3
-        }
-        nav a {
-            color: #d64161;
-            font-size: 3em;
-            margin-left: 50px;
-            text-decoration: none;
-        }
-
-    </style>
+    input[type=file], input[type=submit] {
+      background-color: #06A77D;
+      border: none;
+      color: black;
+      padding: 16px 32px;
+      text-decoration: none;
+      margin: 4px 2px;
+      cursor: pointer;
+}
+</style>
 </head>
 <body>
-    <nav>
-        <a href="{{ url_for('index') }}">FlaskApp</a>
-        <a href="/model">About the Model</a>
-	    <a href="/instructions">How to format the CSV</a>
-        <a href="/dbview">DBVIEW</a>
-    </nav>
+    <header>
+        <div class="nav">
+          <ul>
+            <li class="home"><a href="/">Upload the Excel Sheet</a></li>
+            <li class="models"><a href="/model">About this Model</a></li>
+            <li class="about"><a href="/instructions">How to Format your Excel Sheet</a></li>
+            <li class="view"><a href="/dbview">View your Excel Sheet</a></li>
+          </ul>
+        </div>
+      </header>
+
     <hr>
     <div class="content">
-    		<h1>This app... </h1>
+    		<h1>Network Extrenalities Optimization (NEO) </h1>
+
     		<form method='post' action='/' enctype='multipart/form-data'>
-              Upload a csv file: <input type='file' name='file'>
-              <input type='submit' value='Upload'>
+                <p style="font-size: 24px">Upload a csv file: </p> <input type='file' name='file'>
+                <input type='submit' value='Upload'>
             </form>
     </div>
 </body>
