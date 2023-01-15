@@ -65,17 +65,24 @@ def viewEntries ():
     list = db.engine.execute("SELECT * FROM cost").fetchall()
     return render_template('dbview.html',list=list)
 
-@app.route("/upload_csv")
-def view ():
-    #view the table/csv uploaded
+@app.route("/run_model")
+def runModel ():
     #run model on the data
     #call dijstra's algorithm on the data to create the distance matrix
+    dijstra()
     #call heuristic
+    heuristic()
     #running the opti on Gurobi
-    return render_template('view.html')
+
+    #display a map of the final solution
+    
+    return render_template('modelRun.html')
 
 def heuristic():
     return "run heuristic"
+
+def dijstra ():
+    return "run shortest path alg"
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
