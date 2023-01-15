@@ -11,8 +11,24 @@ h1 {
 
 body {
   margin: 0;
-  padding: 10;
+  padding: 3;
   background: #FFFFFF;
+  text-align: center;
+}
+
+input[type="file"]
+{
+    font-size:20px;
+}
+
+input[type="submit"]
+{
+    font-size:20px;
+}
+
+input[type="text"]
+{
+    font-size:20px;
 }
 
 .nav ul {

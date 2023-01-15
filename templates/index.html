@@ -4,6 +4,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
     <meta charset="UTF-8">
     <title>Opti</title>
+    <style>
+    input[type=file], input[type=submit] {
+      background-color: #06A77D;
+      border: none;
+      color: black;
+      padding: 16px 32px;
+      text-decoration: none;
+      margin: 4px 2px;
+      cursor: pointer;
+}
+</style>
 </head>
 <body>
     <header>
@@ -19,10 +30,11 @@
 
     <hr>
     <div class="content">
-    		<h1>This app... </h1>
+    		<h1>Network Extrenalities Optimization (NEO) </h1>
+
     		<form method='post' action='/' enctype='multipart/form-data'>
-              Upload a csv file: <input type='file' name='file'>
-              <input type='submit' value='Upload'>
+                <p style="font-size: 24px">Upload a csv file: </p> <input type='file' name='file'>
+                <input type='submit' value='Upload'>
             </form>
     </div>
 </body>
