@@ -6,6 +6,7 @@ from io import TextIOWrapper
 from flask import Flask, render_template, request, redirect, url_for
 import pandas as pd
 from flask_sqlalchemy import SQLAlchemy
+import numpy as np
 from openpyxl import Workbook
 
 app = Flask(__name__)
@@ -71,15 +72,33 @@ def runModel ():
     #call dijstra's algorithm on the data to create the distance matrix
     dijstra()
     #call heuristic
-    heuristic()
+    anArray = heuristic()
     #running the opti on Gurobi
 
     #display a map of the final solution
 
-    return render_template('modelRun.html')
+    return render_template('runModel.html', listPrint = anArray)
 
 def heuristic():
-    return "run heuristic"
+    truck_paths = {0: np.array([0]), 1: np.array([0]), 2: np.array([0]), 3: np.array([0])}
+    truck_capacity = np.array(db.engine.execute("SELECT * FROM truck").fetchall())
+    demand_Retailer = np.array(db.engine.execute("SELECT * FROM demand").fetchall())
+    adjacencyMatrix = np.array(db.engine.execute("SELECT * FROM distance").fetchall())
+    # cost $/km for ESAL damage based on vehicle
+    esal_k = [0.1, 0.1, 0.05, 0.05]
+    # cost of $/km for GHG damage based on vehicle
+    ghg_k = [0, 0, 0.07334474, 0.07334474]
+
+    # initialize
+    remaining_Cust = np.array(db.engine.execute("SELECT * FROM demand").fetchall())
+    remaining_Demand = np.array(db.engine.execute("SELECT * FROM demand").fetchall())
+    remaining_truck_capacity = np.array(db.engine.execute("SELECT * FROM truck").fetchall())
+    currLocation = 0
+    numTruck = 0
+    loadPerTruck = {0: np.array([]), 1: np.array([]), 2: np.array([]), 3: np.array([])}
+    print("truck capacity: IS IT OK?")
+    print(truck_capacity)
+    return truck_capacity
 
 def dijstra ():
     return "run shortest path alg"
