@@ -8,6 +8,7 @@ import pandas as pd
 from flask_sqlalchemy import SQLAlchemy
 import numpy as np
 import random2
+import folium
 from openpyxl import Workbook
 
 app = Flask(__name__)
