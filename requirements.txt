@@ -1,1 +1,5 @@
 Flask
+pandas
+flask_sqlalchemy
+numpy
+random2

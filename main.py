@@ -7,7 +7,7 @@ from flask import Flask, render_template, request, redirect, url_for
 import pandas as pd
 from flask_sqlalchemy import SQLAlchemy
 import numpy as np
-import random
+import random2
 from openpyxl import Workbook
 
 app = Flask(__name__)
@@ -185,8 +185,8 @@ def heuristic():
             b = len(currPath)
             for looping in range(0, 10):
                 # pick 2 random nodes in side truck path and swap the nodes
-                n1 = random.randint(1, b - 2)
-                n2 = random.randint(1, b - 2)
+                n1 = random2.randint(1, b - 2)
+                n2 = random2.randint(1, b - 2)
                 if n2 > n1:
                     currPath[n1], currPath[n2] = currPath[n2], currPath[n1]
                 elif n1 > n2:
@@ -267,8 +267,8 @@ def heuristic():
     # exchange or add into routes
     for looping in range(0, 100):
         # pick 2 random truck routes
-        r1 = random.randint(0, 3)
-        r2 = random.randint(0, 3)
+        r1 = random2.randint(0, 3)
+        r2 = random2.randint(0, 3)
         if r1 == r2:
             if r1 != 0:
                 r1 -= 1
@@ -288,18 +288,18 @@ def heuristic():
             # picked a truck that was not in use
             # NOTE IF THERE IS MORE THAN ONE TRUCK NOT IN USE THIS LOGIC NEEDS TO BE REDONE
             if len_route1 == 2:
-                n2 = random.randint(1, len_route2 - 2)
+                n2 = random2.randint(1, len_route2 - 2)
                 node2 = route2[n2]
                 node1 = 0
                 n1 = 0
             if len_route2 == 2:
-                n1 = random.randint(1, len_route1 - 2)
+                n1 = random2.randint(1, len_route1 - 2)
                 node1 = route1[n1]
                 node2 = 0
                 n2 = 0
         else:
-            n1 = random.randint(1, len_route1 - 2)
-            n2 = random.randint(1, len_route2 - 2)
+            n1 = random2.randint(1, len_route1 - 2)
+            n2 = random2.randint(1, len_route2 - 2)
             node1 = route1[n1]
             node2 = route2[n2]
         if node1 != node2:
