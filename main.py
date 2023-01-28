@@ -82,7 +82,13 @@ def runModel ():
     return render_template('runModel.html', listPrint = anArray)
 
 def heuristic():
-    truck_paths = {0: np.array([0]), 1: np.array([0]), 2: np.array([0]), 3: np.array([0])}
+    numTrucksTotal = db.engine.execute("select count(*) from truck").fetchall()
+    #truck_paths = {0: np.array([0]), 1: np.array([0]), 2: np.array([0]), 3: np.array([0])}
+    #make the truck paths dynamically
+    truck_paths={}
+    for i in range(0,numTrucksTotal):
+        truck_paths[i] = np.array([0])
+
     truck_capacity = np.array(db.engine.execute("SELECT * FROM truck").fetchall())
     demand_Retailer = np.array(db.engine.execute("SELECT * FROM demand").fetchall())
     adjacencyMatrix = np.array(db.engine.execute("SELECT * FROM distance").fetchall())
@@ -97,11 +103,15 @@ def heuristic():
     remaining_truck_capacity = np.array(db.engine.execute("SELECT * FROM truck").fetchall())
     currLocation = 0
     numTruck = 0
-    loadPerTruck = {0: np.array([]), 1: np.array([]), 2: np.array([]), 3: np.array([])}
+    #loadPerTruck = {0: np.array([]), 1: np.array([]), 2: np.array([]), 3: np.array([])}
+    # make the truck paths dynamically
+    loadPerTruck = {}
+    for i in range(0, numTrucksTotal):
+        loadPerTruck[i] = np.array([])
     #print("truck capacity: IS IT OK?")
     #print(truck_capacity)
 
-    while (remaining_Demand.any() and numTruck < 4):
+    while (remaining_Demand.any() and numTruck < numTrucksTotal):
         # check if the truck has more capacity
         while (remaining_Cust.any()):  # remaining_truck_capacity[numTruck]>0 and
             nearest_neighbour = remaining_Cust[0];
@@ -145,7 +155,7 @@ def heuristic():
 
     objValue = 0
     costPerTruckPath = np.array([0.0, 0.0, 0.0, 0.0])
-    for truck in range(0, 4):
+    for truck in range(0, numTrucksTotal):
         truckVal = 0
         currPathtoCalc = truck_paths.get(truck).copy()
         if not np.any(currPathtoCalc):
@@ -178,7 +188,7 @@ def heuristic():
     incumbent_truckSwap = {}
 
     # intra-route 2-opt switch
-    for truck in range(0, 4):
+    for truck in range(0, numTrucksTotal):
         currPath = truck_paths.get(truck).copy()
         # if there is more than 3 elements in the array
         if len(currPath) > 3:
