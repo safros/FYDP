@@ -148,13 +148,17 @@ def heuristic():
                 if remaining_truck_capacity[numTruck] == 0:
                     numTruck += 1
 
-    truck_paths.update({0: np.append(truck_paths.get(0), 0)})
-    truck_paths.update({1: np.append(truck_paths.get(1), 0)})
-    truck_paths.update({2: np.append(truck_paths.get(2), 0)})
-    truck_paths.update({3: np.append(truck_paths.get(3), 0)})
+    #truck_paths.update({0: np.append(truck_paths.get(0), 0)})
+    #truck_paths.update({1: np.append(truck_paths.get(1), 0)})
+    #truck_paths.update({2: np.append(truck_paths.get(2), 0)})
+    #truck_paths.update({3: np.append(truck_paths.get(3), 0)})
+    for i in range(0,numTrucksTotal):
+        truck_paths.update({i:np.append(truck_paths.get(i), 0)})
 
     objValue = 0
-    costPerTruckPath = np.array([0.0, 0.0, 0.0, 0.0])
+    #costPerTruckPath = np.array([0.0, 0.0, 0.0, 0.0])
+    costPerTruckPath=np.zeros(numTrucksTotal)
+
     for truck in range(0, numTrucksTotal):
         truckVal = 0
         currPathtoCalc = truck_paths.get(truck).copy()
@@ -182,7 +186,10 @@ def heuristic():
 
     # IMPROVEMENT HEURISTIC
     # intra-route 2 opt switch
-    opti_truckpaths = {0: np.array([]), 1: np.array([]), 2: np.array([])}
+    #opti_truckpaths = {0: np.array([]), 1: np.array([]), 2: np.array([])}
+    opti_truckpaths = {}
+    for i in range(0, numTrucksTotal):
+        opti_truckpaths[i] = np.array([])
     incumbent2_Opt = []
     incumbent_switch = {}
     incumbent_truckSwap = {}
