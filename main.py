@@ -81,8 +81,8 @@ def runModel ():
     map1 = folium.Map(location=[45.5236, -122.6750])
     body_html = map1.get_root().html.render()
     map1.save("./templates/map.html")
-    map1.get_root().width = "800px"
-    map1.get_root().height = "600px"
+    map1.get_root().width = "1500px"
+    map1.get_root().height = "800px"
     iframe = map1.get_root()._repr_html_()
     return render_template('runModel.html', iframe=iframe,)
 
