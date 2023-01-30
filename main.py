@@ -78,10 +78,14 @@ def runModel ():
     #running the opti on Gurobi
 
     #display a map of the final solution
-    m = folium.Map(location=[45.5236, -122.6750])
-    body_html = m.get_root().html.render()
+    map1 = folium.Map(location=[45.5236, -122.6750])
+    body_html = map1.get_root().html.render()
+    map1.save("./templates/map.html")
+    map1.get_root().width = "800px"
+    map1.get_root().height = "600px"
+    iframe = map1.get_root()._repr_html_()
+    return render_template('runModel.html', iframe=iframe,)
 
-    return render_template('runModel.html', listPrint = anArray, body_html=body_html)
 
 def heuristic():
     numTrucksTotal = db.engine.execute("select count(*) from truck").fetchall()
