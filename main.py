@@ -35,20 +35,29 @@ def index ():
         csv_file = request.files['file']
         #csv_file = TextIOWrapper(csv_file, encoding='utf-8')
         #csv_reader = csv.reader(csv_file, delimiter=',')
-        costData = pd.read_excel(csv_file, 'cost')
+        startData = pd.read_excel(csv_file, 'start')
         distanceData = pd.read_excel(csv_file, 'distance')
         truckData = pd.read_excel(csv_file, 'truck')
         demandData = pd.read_excel(csv_file,'demand')
+        damagesData = pd.read_excel(csv_file, 'damages')
+        speedData = pd.read_excel(csv_file, 'speedLimit')
+        emissionsData = pd.read_excel(csv_file, 'emissions')
+        lookUpData = pd.read_excel(csv_file, 'nodeLookUp')
         #for row in csv_reader:
         #user = User(username=row[0], email=row[1])
         #db.session.add(user)
         #dataDB = DataForModel(cost=row[0])
         #db.session.add(dataDB)
-        costData.to_sql('cost', con=db.engine, if_exists='replace')
+        startData.to_sql('currlocation', con=db.engine, if_exists='replace', index_label='id')
         distanceData.to_sql('distance', con=db.engine, if_exists='replace', index_label='id')
         truckData.to_sql('truck', con=db.engine, if_exists='replace', index_label='id')
         demandData.to_sql('demand', con=db.engine, if_exists='replace', index_label='id')
-        list = db.engine.execute("SELECT * FROM cost").fetchall()
+        damagesData.to_sql('damages', con=db.engine, if_exists='replace', index_label='id')
+        speedData.to_sql('speedLimit', con=db.engine, if_exists='replace', index_label='id')
+        emissionsData.to_sql('emissions', con=db.engine, if_exists='replace', index_label='id')
+        lookUpData.to_sql('lookUp', con=db.engine, if_exists='replace', index_label='id')
+        
+        list = db.engine.execute("SELECT * FROM truck").fetchall()
         print(list)
         db.session.commit()
         return render_template('dbview.html',list=list)
@@ -65,7 +74,7 @@ def display():
 
 @app.route("/dbview")
 def viewEntries ():
-    list = db.engine.execute("SELECT * FROM cost").fetchall()
+    list = db.engine.execute("SELECT * FROM truck").fetchall()
     return render_template('dbview.html',list=list)
 
 @app.route("/run_model")
