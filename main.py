@@ -429,7 +429,26 @@ def heuristic():
 def dijstra ():
     #create the graph
     nodes=[]
-    db.engine.execute("SELECT * FROM truck").fetchall()
+    dataLookUp = db.engine.execute("SELECT * FROM lookUp").fetchall()
+    dataDamages = db.engine.execute("SELECT * FROM damages").fetchall()
+    dataEmissions=db.engine.execute("SELECT * FROM emissions").fetchall()
+    init_graph_Damages = {}
+    init_graph_Emissions={}
+    for row in dataLookUp:
+        nodes.append(str(row[0]))
+        #print(row)
+
+    for node in nodes:
+        init_graph_Damages[node] = {}
+        init_graph_Emissions[node] = {}
+
+    #add the costs to the graph
+    for row in dataDamages:
+        init_graph_Damages[str(row[0])][str(row[1])] = str(row[2])
+
+    for row in dataEmissions:
+        init_graph_Emissions[str(row[0])][str(row[1])] = str(row[2])
+
     return "run shortest path alg"
 
 # Press the green button in the gutter to run the script.
