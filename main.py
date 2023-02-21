@@ -432,6 +432,7 @@ def dijstra ():
     dataLookUp = db.engine.execute("SELECT * FROM lookUp").fetchall()
     dataDamages = db.engine.execute("SELECT * FROM damages").fetchall()
     dataEmissions=db.engine.execute("SELECT * FROM emissions").fetchall()
+    dataDistances=db.engine.execute("SELECT * FROM distance").fetchall()
     init_graph_Damages = {}
     init_graph_Emissions={}
     for row in dataLookUp:
@@ -446,8 +447,10 @@ def dijstra ():
     for row in dataDamages:
         init_graph_Damages[str(row[0])][str(row[1])] = str(row[2])
 
-    for row in dataEmissions:
-        init_graph_Emissions[str(row[0])][str(row[1])] = str(row[2])
+    for row in dataDistances:
+        # fetch the speed corresponding to the correct origin destination
+        #take that speed and get the correct emissions for exactly one type of truck
+        init_graph_Emissions[str(row[0])][str(row[1])] = str(row[2])#emisionsValue (from prev line)
 
     return "run shortest path alg"
 
