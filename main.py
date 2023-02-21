@@ -56,7 +56,7 @@ def index ():
         speedData.to_sql('speedLimit', con=db.engine, if_exists='replace', index_label='id')
         emissionsData.to_sql('emissions', con=db.engine, if_exists='replace', index_label='id')
         lookUpData.to_sql('lookUp', con=db.engine, if_exists='replace', index_label='id')
-        
+
         list = db.engine.execute("SELECT * FROM truck").fetchall()
         print(list)
         db.session.commit()
@@ -75,6 +75,11 @@ def display():
 @app.route("/dbview")
 def viewEntries ():
     list = db.engine.execute("SELECT * FROM truck").fetchall()
+    #pritn names of columns to check
+    #data = db.engine.execute('''SELECT * FROM truck''')
+    #row = data.fetchone()
+    #names = row.keys()
+    #print(names)
     return render_template('dbview.html',list=list)
 
 @app.route("/run_model")
@@ -422,6 +427,9 @@ def heuristic():
     return truck_capacity
 
 def dijstra ():
+    #create the graph
+    nodes=[]
+    db.engine.execute("SELECT * FROM truck").fetchall()
     return "run shortest path alg"
 
 # Press the green button in the gutter to run the script.
