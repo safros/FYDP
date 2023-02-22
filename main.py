@@ -452,8 +452,10 @@ def dijstra ():
     for row in dataDistances:
         # fetch the speed corresponding to the correct origin destination
         speedNeeded =db.engine.execute("SELECT Speed_Limit FROM speedLimit WHERE Origin_ID LIKE '{}' AND Destination_ID LIKE '{}'".format(str(row[1]), str(row[2]))).fetchall()
+        for s in speedNeeded:
+            lookSpeed = str(s[0])
         #take that speed and get the correct emissions for exactly one type of truck
-        dataEmissions = db.engine.execute("SELECT costperKm FROM emissions WHERE typeTruck LIKE 'Single Unit Short Haul' AND speed LIKE '{}' ".format(str(speedNeeded[0]))).fetchall()
+        dataEmissions = db.engine.execute("SELECT costperKm FROM emissions WHERE typeTruck LIKE 'Single Unit Short Haul' AND speed LIKE '{}' ".format(lookSpeed)).fetchall()
         init_graph_Emissions[str(row[1])][str(row[2])] = str(row[3])*dataEmissions
 
     graphDamage = capstone.Graph(nodes, init_graph_Damages)
