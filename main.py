@@ -449,6 +449,7 @@ def dijstra ():
 
     for row in dataDistances:
         # fetch the speed corresponding to the correct origin destination
+        speedNeeded =db.engine.execute("SELECT Speed_Limit FROM speedLimit WHERE Origin_ID LIKE '{}' AND Destination_ID LIKE '{}'".format(str(row[0]), str(row[1]))).fetchall()
         #take that speed and get the correct emissions for exactly one type of truck
         init_graph_Emissions[str(row[0])][str(row[1])] = str(row[2])#emisionsValue (from prev line)
 
