@@ -9,6 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 import numpy as np
 import random2
 import folium
+import capstone
+from capstone import dijkstra_algorithm, print_result
 from openpyxl import Workbook
 
 app = Flask(__name__)
@@ -35,20 +37,29 @@ def index ():
         csv_file = request.files['file']
         #csv_file = TextIOWrapper(csv_file, encoding='utf-8')
         #csv_reader = csv.reader(csv_file, delimiter=',')
-        costData = pd.read_excel(csv_file, 'cost')
+        startData = pd.read_excel(csv_file, 'start')
         distanceData = pd.read_excel(csv_file, 'distance')
         truckData = pd.read_excel(csv_file, 'truck')
         demandData = pd.read_excel(csv_file,'demand')
+        damagesData = pd.read_excel(csv_file, 'damages')
+        speedData = pd.read_excel(csv_file, 'speedLimit')
+        emissionsData = pd.read_excel(csv_file, 'emissions')
+        lookUpData = pd.read_excel(csv_file, 'nodeLookUp')
         #for row in csv_reader:
         #user = User(username=row[0], email=row[1])
         #db.session.add(user)
         #dataDB = DataForModel(cost=row[0])
         #db.session.add(dataDB)
-        costData.to_sql('cost', con=db.engine, if_exists='replace')
+        startData.to_sql('currlocation', con=db.engine, if_exists='replace', index_label='id')
         distanceData.to_sql('distance', con=db.engine, if_exists='replace', index_label='id')
         truckData.to_sql('truck', con=db.engine, if_exists='replace', index_label='id')
         demandData.to_sql('demand', con=db.engine, if_exists='replace', index_label='id')
-        list = db.engine.execute("SELECT * FROM cost").fetchall()
+        damagesData.to_sql('damages', con=db.engine, if_exists='replace', index_label='id')
+        speedData.to_sql('speedLimit', con=db.engine, if_exists='replace', index_label='id')
+        emissionsData.to_sql('emissions', con=db.engine, if_exists='replace', index_label='id')
+        lookUpData.to_sql('lookUp', con=db.engine, if_exists='replace', index_label='id')
+
+        list = db.engine.execute("SELECT * FROM truck").fetchall()
         print(list)
         db.session.commit()
         return render_template('dbview.html',list=list)
@@ -65,14 +76,19 @@ def display():
 
 @app.route("/dbview")
 def viewEntries ():
-    list = db.engine.execute("SELECT * FROM cost").fetchall()
+    list = db.engine.execute("SELECT * FROM truck").fetchall()
+    #pritn names of columns to check
+    #data = db.engine.execute('''SELECT * FROM truck''')
+    #row = data.fetchone()
+    #names = row.keys()
+    #print(names)
     return render_template('dbview.html',list=list)
 
 @app.route("/run_model")
 def runModel ():
     #run model on the data
     #call dijstra's algorithm on the data to create the distance matrix
-    #adjacencymatrix = dijstra()
+    adjacencymatrix = dijstra()
     #call heuristic
     #anArray = heuristic()
     #running the opti on Gurobi
@@ -81,8 +97,8 @@ def runModel ():
     map1 = folium.Map(location=[45.5236, -122.6750])
     body_html = map1.get_root().html.render()
     map1.save("./templates/map.html")
-    map1.get_root().width = "800px"
-    map1.get_root().height = "600px"
+    map1.get_root().width = "1500px"
+    map1.get_root().height = "800px"
     iframe = map1.get_root()._repr_html_()
     return render_template('runModel.html', iframe=iframe,)
 
@@ -413,6 +429,43 @@ def heuristic():
     return truck_capacity
 
 def dijstra ():
+    #create the graph
+    nodes=[]
+    dataLookUp = db.engine.execute("SELECT * FROM lookUp").fetchall()
+    dataDamages = db.engine.execute("SELECT * FROM damages").fetchall()
+    dataDistances=db.engine.execute("SELECT * FROM distance").fetchall()
+    dataDemand = db.engine.execute("SELECT node_id FROM demand").fetchall()
+    init_graph_Damages = {}
+    init_graph_Emissions={}
+    for row in dataLookUp:
+        nodes.append(str(row[1]))
+        #print(row)
+
+    for node in nodes:
+        init_graph_Damages[node] = {}
+        init_graph_Emissions[node] = {}
+
+    #add the costs to the graph
+    for row in dataDamages:
+        init_graph_Damages[str(row[1])][str(row[2])] = str(row[3])
+
+    for row in dataDistances:
+        # fetch the speed corresponding to the correct origin destination
+        speedNeeded =db.engine.execute("SELECT Speed_Limit FROM speedLimit WHERE Origin_ID LIKE '{}' AND Destination_ID LIKE '{}'".format(str(row[0]), str(row[1]))).fetchall()
+        #take that speed and get the correct emissions for exactly one type of truck
+        dataEmissions = db.engine.execute("SELECT costperKm FROM emissions WHERE typeTruck LIKE 'Single Unit Short Haul' AND speed LIKE '{}' ".format(speedNeeded)).fetchall()
+        init_graph_Emissions[str(row[1])][str(row[2])] = str(row[3])*dataEmissions
+
+    graphDamage = capstone.Graph(nodes, init_graph_Damages)
+    graphEmission = capstone.Graph(nodes, init_graph_Emissions)
+    previous_nodes, shortest_path = dijkstra_algorithm(graph=graphDamage, start_node="1")
+    #for each node in the demand find the path that needs to be taken
+    # Using list comprehension + enumerate()
+    res = [(a, b) for idx, a in enumerate(dataDemand) for b in dataDemand[idx + 1:]]
+    print(str(res))
+    #print_result(previous_nodes, shortest_path, start_node="1", target_node="5")
+    #print_result(previous_nodes, shortest_path, start_node="1", target_node="5")
+
     return "run shortest path alg"
 
 # Press the green button in the gutter to run the script.
