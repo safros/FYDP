@@ -1,7 +1,7 @@
 import sys
-import gurobipy as gp
-from gurobipy import GRB
-import math
+#import gurobipy as gp
+#from gurobipy import GRB
+#import math
 from itertools import combinations
 
 class Graph(object):
@@ -99,62 +99,62 @@ def print_result(previous_nodes, shortest_path, start_node, target_node):
     print(" -> ".join(reversed(path)))
 
 #declare graph
-nodes = ["R", "O", "M", "L", "RO", "B", "BE", "A"]
-
-init_graph = {}
-for node in nodes:
-    init_graph[node] = {}
-
-init_graph["R"]["O"] = 5
-init_graph["R"]["M"] = 7
-init_graph["R"]["L"] = 4
-init_graph["R"]["RO"] = 900000
-init_graph["R"]["B"] = 900000
-init_graph["R"]["A"] = 900000
-init_graph["R"]["RO"] = 900000
-init_graph["R"]["R"] = 10000000000
-init_graph["O"]["B"] = 1
-init_graph["O"]["M"] = 3
-init_graph["O"]["R"] = 10
-init_graph["O"]["L"] = 30
-init_graph["O"]["RO"] = 12
-init_graph["O"]["BE"] = 300
-init_graph["O"]["A"] = 24
-init_graph["M"]["BE"] = 5
-init_graph["M"]["A"] = 4
-init_graph["A"]["BE"] = 1
-init_graph["RO"]["B"] = 2
-init_graph["RO"]["A"] = 2
-init_graph["RO"]["R"] = 20
-init_graph["RO"]["O"] = 12
-init_graph["RO"]["M"] = 2
-init_graph["RO"]["L"] = 2
-init_graph["RO"]["BE"] = 20
-init_graph["BE"]["R"] = 5
-init_graph["BE"]["O"] = 5000
-init_graph["BE"]["M"] = 50
-init_graph["BE"]["L"] = 500
-init_graph["BE"]["RO"] = 5
-init_graph["BE"]["B"] = 3
-init_graph["BE"]["A"] = 5
-init_graph["L"]["R"] = 5
-init_graph["L"]["O"] = 3
-init_graph["L"]["M"] = 7
-init_graph["L"]["RO"] = 3
-init_graph["L"]["B"] = 7
-init_graph["L"]["BE"] = 8
-init_graph["L"]["A"] = 18
-init_graph["B"]["R"] = 5
-init_graph["B"]["O"] = 3
-init_graph["B"]["M"] = 7
-init_graph["B"]["L"] = 8
-init_graph["B"]["RO"] = 3
-init_graph["B"]["BE"] = 8
-init_graph["B"]["A"] = 18
-graph = Graph(nodes, init_graph)
-previous_nodes, shortest_path = dijkstra_algorithm(graph=graph, start_node="R")
-print_result(previous_nodes, shortest_path, start_node="R", target_node="BE")
-print_result(previous_nodes, shortest_path, start_node="R", target_node="L")
+# nodes = ["R", "O", "M", "L", "RO", "B", "BE", "A"]
+#
+# init_graph = {}
+# for node in nodes:
+#     init_graph[node] = {}
+#
+# init_graph["R"]["O"] = 5
+# init_graph["R"]["M"] = 7
+# init_graph["R"]["L"] = 4
+# init_graph["R"]["RO"] = 900000
+# init_graph["R"]["B"] = 900000
+# init_graph["R"]["A"] = 900000
+# init_graph["R"]["RO"] = 900000
+# init_graph["R"]["R"] = 10000000000
+# init_graph["O"]["B"] = 1
+# init_graph["O"]["M"] = 3
+# init_graph["O"]["R"] = 10
+# init_graph["O"]["L"] = 30
+# init_graph["O"]["RO"] = 12
+# init_graph["O"]["BE"] = 300
+# init_graph["O"]["A"] = 24
+# init_graph["M"]["BE"] = 5
+# init_graph["M"]["A"] = 4
+# init_graph["A"]["BE"] = 1
+# init_graph["RO"]["B"] = 2
+# init_graph["RO"]["A"] = 2
+# init_graph["RO"]["R"] = 20
+# init_graph["RO"]["O"] = 12
+# init_graph["RO"]["M"] = 2
+# init_graph["RO"]["L"] = 2
+# init_graph["RO"]["BE"] = 20
+# init_graph["BE"]["R"] = 5
+# init_graph["BE"]["O"] = 5000
+# init_graph["BE"]["M"] = 50
+# init_graph["BE"]["L"] = 500
+# init_graph["BE"]["RO"] = 5
+# init_graph["BE"]["B"] = 3
+# init_graph["BE"]["A"] = 5
+# init_graph["L"]["R"] = 5
+# init_graph["L"]["O"] = 3
+# init_graph["L"]["M"] = 7
+# init_graph["L"]["RO"] = 3
+# init_graph["L"]["B"] = 7
+# init_graph["L"]["BE"] = 8
+# init_graph["L"]["A"] = 18
+# init_graph["B"]["R"] = 5
+# init_graph["B"]["O"] = 3
+# init_graph["B"]["M"] = 7
+# init_graph["B"]["L"] = 8
+# init_graph["B"]["RO"] = 3
+# init_graph["B"]["BE"] = 8
+# init_graph["B"]["A"] = 18
+# graph = Graph(nodes, init_graph)
+# previous_nodes, shortest_path = dijkstra_algorithm(graph=graph, start_node="R")
+# print_result(previous_nodes, shortest_path, start_node="R", target_node="BE")
+# print_result(previous_nodes, shortest_path, start_node="R", target_node="L")
 
 #code adapted from https://gurobi.github.io/modeling-examples/traveling_salesman/tsp.html
 #declare variables
@@ -163,76 +163,76 @@ print_result(previous_nodes, shortest_path, start_node="R", target_node="L")
 #1.875 Highland Rd W, Kitchener, ON N2N 2Y2 (Superstore)
 #2.50 Westmount Rd N Unit B1, Waterloo, ON N2L 6N9 (T&T)
 #3.750 Ottawa St S, Kitchener, ON N2E 1B6 (Zehrs)
-ESAL_ijk = [[]]
-GHG_ijk = [[]]
-demand_Retailer = []
-capacity_tuck= []
-y_ik = [0, 1,1,1]
-CLCto_retailers=[1, 2, 3,4]
-adjacencyMatrix = [[100000000, 16.3, 24.1, 14],
-                       [16.3, 1000000000, 5.4, 5.2],
-                       [24.1, 5.4, 100000000, 7.8],
-                       [14, 5.2, 7.8, 1000000000]]
-
-def distance(city1, city2):
-    #c1 = coordinates[city1]
-    #c2 = coordinates[city2]
-    #diff = (c1[0]-c2[0], c1[1]-c2[1])
-    #return math.sqrt(diff[0]*diff[0]+diff[1]*diff[1])
-    return adjacencyMatrix [city1][city2]
-
-# Callback - use lazy constraints to eliminate sub-tours
-def subtourelim(model, where):
-    if where == GRB.Callback.MIPSOL:
-        # make a list of edges selected in the solution
-        vals = model.cbGetSolution(model._vars)
-        selected = gp.tuplelist((i, j) for i, j in model._vars.keys()
-                             if vals[i, j] > 0.5)
-        # find the shortest cycle in the selected edge list
-        tour = subtour(selected)
-        if len(tour) < len(CLCto_retailers):
-            # add subtour elimination constr. for every pair of cities in subtour
-            model.cbLazy(gp.quicksum(model._vars[i, j] for i, j in combinations(tour, 2))
-                         <= len(tour)-1)
-
-# Given a tuplelist of edges, find the shortest subtour
-def subtour(edges):
-    unvisited = CLCto_retailers[:]
-    cycle = CLCto_retailers[:] # Dummy - guaranteed to be replaced
-    while unvisited:  # true if list is non-empty
-        thiscycle = []
-        neighbors = unvisited
-        while neighbors:
-            current = neighbors[0]
-            thiscycle.append(current)
-            unvisited.remove(current)
-            neighbors = [j for i, j in edges.select(current, '*')
-                         if j in unvisited]
-        if len(thiscycle) <= len(cycle):
-            cycle = thiscycle # New shortest subtour
-    return cycle
-
-# tested with Python 3.7 & Gurobi 9.0.0
-m = gp.Model()
-
-# Variables: is city 'i' adjacent to city 'j' on the tour?
-x_ij = m.addVars(CLCto_retailers, obj=0.05, vtype=GRB.BINARY, name='x')
-
-
-# Constraints: two edges incident to each city
-#cons = m.addConstrs(vars.sum(c, '*') == 2 for c in capitals)
-trucksNum = range(len(y_ik))
-numPoints = range(len(CLCto_retailers))
-TSP1 = m.addConstrs(sum(x_ij*adjacencyMatrix[i][j] for i in numPoints for j in numPoints if i!=j)==y_ik for k in trucksNum)
-#TSP2 = m.addConstrs( sum())
-
-m._vars = vars
-m.Params.lazyConstraints = 1
-m.optimize(subtourelim)
-# Retrieve solution
-
-vals = m.getAttr('x', x_ij)
-selected = gp.tuplelist((i, j) for i, j in vals.keys() if vals[i, j] > 0.5)
-
-tour = subtour(selected)
-assert len(tour) == len(CLCto_retailers)
+# ESAL_ijk = [[]]
+# GHG_ijk = [[]]
+# demand_Retailer = []
+# capacity_tuck= []
+# y_ik = [0, 1,1,1]
+# CLCto_retailers=[1, 2, 3,4]
+# adjacencyMatrix = [[100000000, 16.3, 24.1, 14],
+#                        [16.3, 1000000000, 5.4, 5.2],
+#                        [24.1, 5.4, 100000000, 7.8],
+#                        [14, 5.2, 7.8, 1000000000]]
+#
+# def distance(city1, city2):
+#     #c1 = coordinates[city1]
+#     #c2 = coordinates[city2]
+#     #diff = (c1[0]-c2[0], c1[1]-c2[1])
+#     #return math.sqrt(diff[0]*diff[0]+diff[1]*diff[1])
+#     return adjacencyMatrix [city1][city2]
+#
+# # Callback - use lazy constraints to eliminate sub-tours
+# def subtourelim(model, where):
+#     if where == GRB.Callback.MIPSOL:
+#         # make a list of edges selected in the solution
+#         vals = model.cbGetSolution(model._vars)
+#         selected = gp.tuplelist((i, j) for i, j in model._vars.keys()
+#                              if vals[i, j] > 0.5)
+#         # find the shortest cycle in the selected edge list
+#         tour = subtour(selected)
+#         if len(tour) < len(CLCto_retailers):
+#             # add subtour elimination constr. for every pair of cities in subtour
+#             model.cbLazy(gp.quicksum(model._vars[i, j] for i, j in combinations(tour, 2))
+#                          <= len(tour)-1)
+#
+# # Given a tuplelist of edges, find the shortest subtour
+# def subtour(edges):
+#     unvisited = CLCto_retailers[:]
+#     cycle = CLCto_retailers[:] # Dummy - guaranteed to be replaced
+#     while unvisited:  # true if list is non-empty
+#         thiscycle = []
+#         neighbors = unvisited
+#         while neighbors:
+#             current = neighbors[0]
+#             thiscycle.append(current)
+#             unvisited.remove(current)
+#             neighbors = [j for i, j in edges.select(current, '*')
+#                          if j in unvisited]
+#         if len(thiscycle) <= len(cycle):
+#             cycle = thiscycle # New shortest subtour
+#     return cycle
+#
+# # tested with Python 3.7 & Gurobi 9.0.0
+# m = gp.Model()
+#
+# # Variables: is city 'i' adjacent to city 'j' on the tour?
+# x_ij = m.addVars(CLCto_retailers, obj=0.05, vtype=GRB.BINARY, name='x')
+#
+#
+# # Constraints: two edges incident to each city
+# #cons = m.addConstrs(vars.sum(c, '*') == 2 for c in capitals)
+# trucksNum = range(len(y_ik))
+# numPoints = range(len(CLCto_retailers))
+# TSP1 = m.addConstrs(sum(x_ij*adjacencyMatrix[i][j] for i in numPoints for j in numPoints if i!=j)==y_ik for k in trucksNum)
+# #TSP2 = m.addConstrs( sum())
+#
+# m._vars = vars
+# m.Params.lazyConstraints = 1
+# m.optimize(subtourelim)
+# # Retrieve solution
+#
+# vals = m.getAttr('x', x_ij)
+# selected = gp.tuplelist((i, j) for i, j in vals.keys() if vals[i, j] > 0.5)
+#
+# tour = subtour(selected)
+# assert len(tour) == len(CLCto_retailers)

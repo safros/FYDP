@@ -9,6 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 import numpy as np
 import random2
 import folium
+import capstone
+from capstone import dijkstra_algorithm, print_result
 from openpyxl import Workbook
 
 app = Flask(__name__)
@@ -86,7 +88,7 @@ def viewEntries ():
 def runModel ():
     #run model on the data
     #call dijstra's algorithm on the data to create the distance matrix
-    #adjacencymatrix = dijstra()
+    adjacencymatrix = dijstra()
     #call heuristic
     #anArray = heuristic()
     #running the opti on Gurobi
@@ -431,12 +433,12 @@ def dijstra ():
     nodes=[]
     dataLookUp = db.engine.execute("SELECT * FROM lookUp").fetchall()
     dataDamages = db.engine.execute("SELECT * FROM damages").fetchall()
-    dataEmissions=db.engine.execute("SELECT * FROM emissions").fetchall()
     dataDistances=db.engine.execute("SELECT * FROM distance").fetchall()
+    dataDemand = db.engine.execute("SELECT node_id FROM demand").fetchall()
     init_graph_Damages = {}
     init_graph_Emissions={}
     for row in dataLookUp:
-        nodes.append(str(row[0]))
+        nodes.append(str(row[1]))
         #print(row)
 
     for node in nodes:
@@ -445,13 +447,24 @@ def dijstra ():
 
     #add the costs to the graph
     for row in dataDamages:
-        init_graph_Damages[str(row[0])][str(row[1])] = str(row[2])
+        init_graph_Damages[str(row[1])][str(row[2])] = str(row[3])
 
     for row in dataDistances:
         # fetch the speed corresponding to the correct origin destination
         speedNeeded =db.engine.execute("SELECT Speed_Limit FROM speedLimit WHERE Origin_ID LIKE '{}' AND Destination_ID LIKE '{}'".format(str(row[0]), str(row[1]))).fetchall()
         #take that speed and get the correct emissions for exactly one type of truck
-        init_graph_Emissions[str(row[0])][str(row[1])] = str(row[2])#emisionsValue (from prev line)
+        dataEmissions = db.engine.execute("SELECT costperKm FROM emissions WHERE typeTruck LIKE 'Single Unit Short Haul' AND speed LIKE '{}' ".format(speedNeeded)).fetchall()
+        init_graph_Emissions[str(row[1])][str(row[2])] = str(row[3])*dataEmissions
+
+    graphDamage = capstone.Graph(nodes, init_graph_Damages)
+    graphEmission = capstone.Graph(nodes, init_graph_Emissions)
+    previous_nodes, shortest_path = dijkstra_algorithm(graph=graphDamage, start_node="1")
+    #for each node in the demand find the path that needs to be taken
+    # Using list comprehension + enumerate()
+    res = [(a, b) for idx, a in enumerate(dataDemand) for b in dataDemand[idx + 1:]]
+    print(str(res))
+    #print_result(previous_nodes, shortest_path, start_node="1", target_node="5")
+    #print_result(previous_nodes, shortest_path, start_node="1", target_node="5")
 
     return "run shortest path alg"
 
