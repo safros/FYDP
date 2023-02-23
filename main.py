@@ -465,11 +465,20 @@ def dijstra ():
     previous_nodes, shortest_path = dijkstra_algorithm(graph=graphDamage, start_node="1")
     previous_nodes1, shortest_path1 = dijkstra_algorithm(graph=graphEmission, start_node="1")
     #for each node in the demand find the path that needs to be taken and into a dictionary and an adjaceny matrix
+    mapDictionary={}
+    #declare first row of adjacencyMatrix
     nodeListDemand= dataDemand
+    adjacencyMatrix=np.array()
+    toadd =np.array()
     for idx in range(5):
         for idx2 in range(5):
-            startNode = nodeListDemand[idx]
-            endNode = nodeListDemand[idx2]
+            startNode = str(nodeListDemand[idx])
+            endNode = str(nodeListDemand[idx2])
+            pathResult =print_result(previous_nodes, shortest_path, start_node=startNode, target_node=endNode)
+            mapDictionary["{},{}".format(startNode,endNode)]=pathResult
+            np.append(toadd,)
+        np.append(adjacencyMatrix,toadd)
+
 
     #print_result(previous_nodes, shortest_path, start_node="1", target_node="5")
     #print_result(previous_nodes, shortest_path, start_node="1", target_node="5")
