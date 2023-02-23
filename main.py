@@ -447,7 +447,7 @@ def dijstra ():
 
     #add the costs to the graph
     for row in dataDamages:
-        init_graph_Damages[str(row[1])][str(row[2])] = str(row[3])
+        init_graph_Damages[str(row[1])][str(row[2])] = float(row[3])
 
     for row in dataDistances:
         # fetch the speed corresponding to the correct origin destination
@@ -456,15 +456,21 @@ def dijstra ():
             lookSpeed = str(s[0])
         #take that speed and get the correct emissions for exactly one type of truck
         dataEmissions = db.engine.execute("SELECT costperKm FROM emissions WHERE typeTruck LIKE 'Single Unit Short Haul' AND speed LIKE '{}' AND gasVDiesel LIKE 'diesel'".format(lookSpeed)).fetchall()
-        init_graph_Emissions[str(row[1])][str(row[2])] = str(row[3])*dataEmissions
+        for s in dataEmissions:
+            lookE = float(s[0])
+        init_graph_Emissions[str(row[1])][str(row[2])] = float(row[3])*float(lookE)
 
     graphDamage = capstone.Graph(nodes, init_graph_Damages)
     graphEmission = capstone.Graph(nodes, init_graph_Emissions)
     previous_nodes, shortest_path = dijkstra_algorithm(graph=graphDamage, start_node="1")
-    #for each node in the demand find the path that needs to be taken
-    # Using list comprehension + enumerate()
-    res = [(a, b) for idx, a in enumerate(dataDemand) for b in dataDemand[idx + 1:]]
-    print(str(res))
+    previous_nodes1, shortest_path1 = dijkstra_algorithm(graph=graphEmission, start_node="1")
+    #for each node in the demand find the path that needs to be taken and into a dictionary and an adjaceny matrix
+    nodeListDemand= dataDemand
+    for idx in range(5):
+        for idx2 in range(5):
+            startNode = nodeListDemand[idx]
+            endNode = nodeListDemand[idx2]
+
     #print_result(previous_nodes, shortest_path, start_node="1", target_node="5")
     #print_result(previous_nodes, shortest_path, start_node="1", target_node="5")
 
