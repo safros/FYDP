@@ -466,23 +466,30 @@ def dijstra ():
     previous_nodes1, shortest_path1 = dijkstra_algorithm(graph=graphEmission, start_node="1")
     #for each node in the demand find the path that needs to be taken and into a dictionary and an adjaceny matrix
     mapDictionary={}
+    nodeListDemand=np.array([])
+    toadd =np.array([])
     #declare first row of adjacencyMatrix
-    nodeListDemand= dataDemand
-    adjacencyMatrix=np.array()
-    toadd =np.array()
-    for idx in range(5):
-        for idx2 in range(5):
-            startNode = str(nodeListDemand[idx])
-            endNode = str(nodeListDemand[idx2])
-            pathResult =print_result(previous_nodes, shortest_path, start_node=startNode, target_node=endNode)
-            mapDictionary["{},{}".format(startNode,endNode)]=pathResult
-            np.append(toadd,)
-        np.append(adjacencyMatrix,toadd)
+    for s in dataDemand:
+        nodeListDemand=np.append(nodeListDemand,[s._data])
 
+    adjacencyMatrix=np.array(nodeListDemand)
+    for i in nodeListDemand:
+        adjacencyMatrix=np.append(adjacencyMatrix,shortest_path[i])
 
-    #print_result(previous_nodes, shortest_path, start_node="1", target_node="5")
-    #print_result(previous_nodes, shortest_path, start_node="1", target_node="5")
-
+    for idx in range(nodeListDemand.size):
+        toadd=np.append(toadd, nodeListDemand[idx])
+        for idx2 in range(nodeListDemand.size):
+            if idx==idx2:
+                #put inf
+                toadd = np.append(toadd, 100000000000000000)
+            else:
+                startNode = str(nodeListDemand[idx])
+                endNode = str(nodeListDemand[idx2])
+                pathResult =print_result(previous_nodes, shortest_path, start_node=startNode, target_node=endNode)
+                mapDictionary["{},{}".format(startNode,endNode)]=pathResult
+                toadd=np.append(toadd,shortest_path[endNode])
+        adjacencyMatrix=np.append(adjacencyMatrix,toadd)
+        toadd.clear()
     return "run shortest path alg"
 
 # Press the green button in the gutter to run the script.
