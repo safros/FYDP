@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+    <meta charset="UTF-8">
+    <title>Run Button</title>
+    <style>
+    input[type=submit] {
+      background-color: #06A77D;
+      border: none;
+      color: black;
+      padding: 16px 32px;
+      text-decoration: none;
+      margin: 4px 2px;
+      cursor: pointer;
+    }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="nav">
+          <ul>
+            <li class="home"><a href="/">Upload the Excel Sheet</a></li>
+            <li class="models"><a href="/model">About this Model</a></li>
+            <li class="about"><a href="/instructions">How to Format your Excel Sheet</a></li>
+            <li class="view"><a href="/dbview">View your Excel Sheet</a></li>
+          </ul>
+        </div>
+      </header>
+
+    <div class="content">
+         <form action="/run_model" method="POST">
+            <input type="submit" value='Run the Model' style="font-size: 24px"/>
+          </form>
+    </div>
+</body>
+</html>
