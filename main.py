@@ -489,7 +489,12 @@ def dijstra ():
                 mapDictionary["{},{}".format(starNode,endNode)]=pathResult
                 toadd[0][idx2]=shortest_path[endNode]
         adjacencyMatrix=np.append(adjacencyMatrix,toadd,axis=0)
-    return "run shortest path alg"
+    #save the dictionary and the matrix
+    dfAdj = pd.DataFrame(adjacencyMatrix)
+    dfMapDict = pd.DataFrame.from_dict(mapDictionary, orient='index')
+    dfAdj.to_sql('adjMatrix', con=db.engine, if_exists='replace', index_label='id')
+    dfMapDict.to_sql('MapDictionary',con=db.engine,if_exists='replace', index_label='id')
+    return "completed"
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
