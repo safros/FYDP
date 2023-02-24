@@ -79,4 +79,8 @@ input[type="text"]
     margin-right: -4px;
   }
 
+  .text-center {
+  text-align: center;
+}
+
 }
