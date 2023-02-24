@@ -97,7 +97,7 @@ def print_result(previous_nodes, shortest_path, start_node, target_node):
 
     print("We found the following best path with a value of {}.".format(shortest_path[target_node]))
     print(" -> ".join(reversed(path)))
-    return reversed(path)
+    return path
 
 #declare graph
 # nodes = ["R", "O", "M", "L", "RO", "B", "BE", "A"]

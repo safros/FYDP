@@ -476,7 +476,7 @@ def dijstra ():
     adjacencyMatrix=np.array(nodeListDemand)
 
     for idx in range(nodeListDemand.size):
-        starNode=nodeListDemand[idx]
+        starNode=str(nodeListDemand[idx])
         previous_nodes, shortest_path = dijkstra_algorithm(graph=graphDamage, start_node=starNode)
         for idx2 in range(nodeListDemand.size):
             if idx==idx2:
@@ -488,8 +488,8 @@ def dijstra ():
                 pathResult =print_result(previous_nodes, shortest_path, start_node=starNode, target_node=endNode)
                 mapDictionary["{},{}".format(starNode,endNode)]=pathResult
                 toadd=np.append(toadd,shortest_path[endNode])
-        adjacencyMatrix=np.append(adjacencyMatrix,toadd)
-        toadd.clear()
+        adjacencyMatrix=np.append(adjacencyMatrix,toadd,axis=0)
+        np.delete(toadd)
     return "run shortest path alg"
 
 # Press the green button in the gutter to run the script.
