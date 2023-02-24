@@ -87,7 +87,7 @@ def viewEntries ():
 @app.route("/run_model",methods=('GET','POST'))
 def runModel ():
     #run model on the data
-    #call dijstra's algorithm on the data to create the distance matrix
+    #call dijstra's algorithm on the data to create the adj matrix and the shortest path mapping
     adjacencymatrix = dijstra()
     #call heuristic
     #anArray = heuristic()
@@ -111,12 +111,28 @@ def heuristic():
     for i in range(0,numTrucksTotal):
         truck_paths[i] = np.array([0])
 
-    truck_capacity = np.array(db.engine.execute("SELECT * FROM truck").fetchall())
-    demand_Retailer = np.array(db.engine.execute("SELECT * FROM demand").fetchall())
-    adjacencyMatrix = np.array(db.engine.execute("SELECT * FROM distance").fetchall())
-    # cost $/km for ESAL damage based on vehicle
+    datatruck_capacity = db.engine.execute("SELECT capacity FROM truck").fetchall()
+    truck_capacity=np.array()
+    for s in datatruck_capacity:
+        truck_capacity=np.append(truck_capacity,int(s[0]))
+
+    datademand_Retailer = db.engine.execute("SELECT demand_units FROM demand").fetchall()
+    demand_Retailer=np.array()
+    for s in datademand_Retailer:
+        demand_Retailer=np.append(demand_Retailer,int(s[0]))
+
+    dataadjacencyMatrix = db.engine.execute("SELECT * FROM adjMatrixDamages").fetchall()
+    skip=True
+    for s in dataadjacencyMatrix:
+        if not skip:
+            # get from col 1 to the end of the row and add the row underneath
+            adjacencyMatrix = np.append(adjacencyMatrix, s[1:demand_Retailer.size], axis=0)
+        else:
+            skip=False
+
+    # cost $/km for ESAL damage based on vehicle DO NOT NEED AS THIS WILL ALREADY BE ACCOUNTED FOR
     esal_k = [0.1, 0.1, 0.05, 0.05]
-    # cost of $/km for GHG damage based on vehicle
+    # cost of $/km for GHG damage based on vehicle DO NOT NEED THIS AT ALL ALREADY IN THE COST CONSIDERED FOR
     ghg_k = [0, 0, 0.07334474, 0.07334474]
 
     # initialize
@@ -429,7 +445,7 @@ def heuristic():
     return truck_capacity
 
 def dijstra ():
-    #create the graph
+    #get all the data needed for the graph
     nodes=[]
     dataLookUp = db.engine.execute("SELECT * FROM lookUp").fetchall()
     dataDamages = db.engine.execute("SELECT * FROM damages").fetchall()
@@ -469,6 +485,7 @@ def dijstra ():
     for s in dataStartNode:
         starNode=str(int(s[0]))
     mapDictionary={}
+    mapDictionary1 = {}
     #starNode = "1"
     nodeListDemand=np.array([starNode])
     toadd =np.array([])
@@ -477,26 +494,38 @@ def dijstra ():
         nodeListDemand=np.append(nodeListDemand,[s._data])
 
     adjacencyMatrix=np.array([nodeListDemand])
+    adjacencyMatrix1 = np.array([nodeListDemand])
     toadd=np.empty([1,nodeListDemand.size])
+    toadd1 = np.empty([1, nodeListDemand.size])
+    #for every demand node loop yo create an adjacency matrix
     for idx in range(nodeListDemand.size):
         starNode=str(nodeListDemand[idx])
         previous_nodes, shortest_path = dijkstra_algorithm(graph=graphDamage, start_node=starNode)
+        previous_nodes1, shortest_path1 = dijkstra_algorithm(graph=graphEmission, start_node=starNode)
         for idx2 in range(nodeListDemand.size):
             if idx==idx2:
-                #put inf
+                #put inf because node to itself is infinity
                 toadd[0][idx2] =100000000000000000
             else:
                 #startNode = str(int(nodeListDemand[idx]))
                 endNode = str(int(nodeListDemand[idx2]))
                 pathResult =print_result(previous_nodes, shortest_path, start_node=starNode, target_node=endNode)
+                pathResult1 = print_result(previous_nodes1, shortest_path1, start_node=starNode, target_node=endNode)
                 mapDictionary["{},{}".format(starNode,endNode)]=pathResult
+                mapDictionary["{},{}".format(starNode, endNode)] = pathResult1
                 toadd[0][idx2]=shortest_path[endNode]
+                toadd1[0][idx2] = shortest_path1[endNode]
         adjacencyMatrix=np.append(adjacencyMatrix,toadd,axis=0)
+        adjacencyMatrix1 = np.append(adjacencyMatrix1, toadd1, axis=0)
     #save the dictionary and the matrix
     dfAdj = pd.DataFrame(adjacencyMatrix)
     dfMapDict = pd.DataFrame.from_dict(mapDictionary, orient='index')
-    dfAdj.to_sql('adjMatrix', con=db.engine, if_exists='replace', index_label='id')
-    dfMapDict.to_sql('MapDictionary',con=db.engine,if_exists='replace', index_label='id')
+    dfAdj.to_sql('adjMatrixDamages', con=db.engine, if_exists='replace', index_label='id')
+    dfMapDict.to_sql('MapDictionaryDamages',con=db.engine,if_exists='replace', index_label='id')
+    dfAdj = pd.DataFrame(adjacencyMatrix1)
+    dfMapDict = pd.DataFrame.from_dict(mapDictionary1, orient='index')
+    dfAdj.to_sql('adjMatrixEmissions', con=db.engine, if_exists='replace', index_label='id')
+    dfMapDict.to_sql('MapDictionaryEmissions', con=db.engine, if_exists='replace', index_label='id')
     return "completed"
 
 # Press the green button in the gutter to run the script.
