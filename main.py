@@ -62,7 +62,7 @@ def index ():
         list = db.engine.execute("SELECT * FROM truck").fetchall()
         print(list)
         db.session.commit()
-        return render_template('dbview.html',list=list)
+        return render_template('runModelButton.html')#render_template('dbview.html',list=list)
 
     return render_template('index.html')
 
@@ -84,7 +84,7 @@ def viewEntries ():
     #print(names)
     return render_template('dbview.html',list=list)
 
-@app.route("/run_model")
+@app.route("/run_model",methods=('GET','POST'))
 def runModel ():
     #run model on the data
     #call dijstra's algorithm on the data to create the distance matrix
@@ -435,6 +435,7 @@ def dijstra ():
     dataDamages = db.engine.execute("SELECT * FROM damages").fetchall()
     dataDistances=db.engine.execute("SELECT * FROM distance").fetchall()
     dataDemand = db.engine.execute("SELECT node_id FROM demand").fetchall()
+    dataStartNode = db.engine.execute("SELECT clcLocation FROM currlocation").fetchall()
     init_graph_Damages = {}
     init_graph_Emissions={}
     for row in dataLookUp:
@@ -465,8 +466,10 @@ def dijstra ():
     #previous_nodes, shortest_path = dijkstra_algorithm(graph=graphDamage, start_node="1")
     #previous_nodes1, shortest_path1 = dijkstra_algorithm(graph=graphEmission, start_node="1")
     #for each node in the demand find the path that needs to be taken and into a dictionary and an adjaceny matrix
+    for s in dataStartNode:
+        starNode=str(int(s[0]))
     mapDictionary={}
-    starNode = "1"
+    #starNode = "1"
     nodeListDemand=np.array([starNode])
     toadd =np.array([])
     #declare first row of adjacencyMatrix
