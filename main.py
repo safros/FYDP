@@ -447,26 +447,54 @@ def dijstra ():
 
     #add the costs to the graph
     for row in dataDamages:
-        init_graph_Damages[str(row[1])][str(row[2])] = str(row[3])
+        init_graph_Damages[str(int(row[1]))][str(int(row[2]))] = float(row[3])
 
     for row in dataDistances:
         # fetch the speed corresponding to the correct origin destination
-        speedNeeded =db.engine.execute("SELECT Speed_Limit FROM speedLimit WHERE Origin_ID LIKE '{}' AND Destination_ID LIKE '{}'".format(str(row[0]), str(row[1]))).fetchall()
+        speedNeeded =db.engine.execute("SELECT Speed_Limit FROM speedLimit WHERE Origin_ID LIKE '{}' AND Destination_ID LIKE '{}'".format(str(row[1]), str(row[2]))).fetchall()
+        for s in speedNeeded:
+            lookSpeed = str(s[0])
         #take that speed and get the correct emissions for exactly one type of truck
-        dataEmissions = db.engine.execute("SELECT costperKm FROM emissions WHERE typeTruck LIKE 'Single Unit Short Haul' AND speed LIKE '{}' ".format(speedNeeded)).fetchall()
-        init_graph_Emissions[str(row[1])][str(row[2])] = str(row[3])*dataEmissions
+        dataEmissions = db.engine.execute("SELECT costperKm FROM emissions WHERE typeTruck LIKE 'Single Unit Short Haul' AND speed LIKE '{}' AND gasVDiesel LIKE 'diesel'".format(lookSpeed)).fetchall()
+        for s in dataEmissions:
+            lookE = float(s[0])
+        init_graph_Emissions[str(int(row[1]))][str(int(row[2]))] = float(row[3])*float(lookE)
 
     graphDamage = capstone.Graph(nodes, init_graph_Damages)
     graphEmission = capstone.Graph(nodes, init_graph_Emissions)
-    previous_nodes, shortest_path = dijkstra_algorithm(graph=graphDamage, start_node="1")
-    #for each node in the demand find the path that needs to be taken
-    # Using list comprehension + enumerate()
-    res = [(a, b) for idx, a in enumerate(dataDemand) for b in dataDemand[idx + 1:]]
-    print(str(res))
-    #print_result(previous_nodes, shortest_path, start_node="1", target_node="5")
-    #print_result(previous_nodes, shortest_path, start_node="1", target_node="5")
+    #previous_nodes, shortest_path = dijkstra_algorithm(graph=graphDamage, start_node="1")
+    #previous_nodes1, shortest_path1 = dijkstra_algorithm(graph=graphEmission, start_node="1")
+    #for each node in the demand find the path that needs to be taken and into a dictionary and an adjaceny matrix
+    mapDictionary={}
+    starNode = "1"
+    nodeListDemand=np.array([starNode])
+    toadd =np.array([])
+    #declare first row of adjacencyMatrix
+    for s in dataDemand:
+        nodeListDemand=np.append(nodeListDemand,[s._data])
 
-    return "run shortest path alg"
+    adjacencyMatrix=np.array([nodeListDemand])
+    toadd=np.empty([1,nodeListDemand.size])
+    for idx in range(nodeListDemand.size):
+        starNode=str(nodeListDemand[idx])
+        previous_nodes, shortest_path = dijkstra_algorithm(graph=graphDamage, start_node=starNode)
+        for idx2 in range(nodeListDemand.size):
+            if idx==idx2:
+                #put inf
+                toadd[0][idx2] =100000000000000000
+            else:
+                #startNode = str(int(nodeListDemand[idx]))
+                endNode = str(int(nodeListDemand[idx2]))
+                pathResult =print_result(previous_nodes, shortest_path, start_node=starNode, target_node=endNode)
+                mapDictionary["{},{}".format(starNode,endNode)]=pathResult
+                toadd[0][idx2]=shortest_path[endNode]
+        adjacencyMatrix=np.append(adjacencyMatrix,toadd,axis=0)
+    #save the dictionary and the matrix
+    dfAdj = pd.DataFrame(adjacencyMatrix)
+    dfMapDict = pd.DataFrame.from_dict(mapDictionary, orient='index')
+    dfAdj.to_sql('adjMatrix', con=db.engine, if_exists='replace', index_label='id')
+    dfMapDict.to_sql('MapDictionary',con=db.engine,if_exists='replace', index_label='id')
+    return "completed"
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
