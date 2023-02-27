@@ -90,7 +90,7 @@ def runModel ():
     #call dijstra's algorithm on the data to create the adj matrix and the shortest path mapping
     adjacencymatrix = dijstra()
     #call heuristic
-    #anArray = heuristic()
+    anArray = heuristic()
     #running the opti on Gurobi
 
     #display a map of the final solution
@@ -105,6 +105,7 @@ def runModel ():
 
 def heuristic():
     numTrucksTotal = db.engine.execute("select count(*) from truck").fetchall()
+    numTrucksTotal=numTrucksTotal[0]._data[0]
     #truck_paths = {0: np.array([0]), 1: np.array([0]), 2: np.array([0]), 3: np.array([0])}
     #make the truck paths dynamically
     truck_paths={}
@@ -112,7 +113,7 @@ def heuristic():
         truck_paths[i] = np.array([0])
 
     datatruck_capacity = db.engine.execute("SELECT capacity FROM truck").fetchall()
-    truck_capacity=np.array()
+    truck_capacity=[]
     for s in datatruck_capacity:
         truck_capacity=np.append(truck_capacity,int(s[0]))
 
@@ -130,10 +131,24 @@ def heuristic():
         else:
             skip=False
 
-    # cost $/km for ESAL damage based on vehicle DO NOT NEED AS THIS WILL ALREADY BE ACCOUNTED FOR
-    esal_k = [0.1, 0.1, 0.05, 0.05]
-    # cost of $/km for GHG damage based on vehicle DO NOT NEED THIS AT ALL ALREADY IN THE COST CONSIDERED FOR
+    #for ESAL damage based on vehicle, mutiply the adj cost matrix by esal in truck table
+    dataESAL = db.engine.execute("SELECT esal FROM truck").fetchall()
+    esal_k = []
+    for s in dataESAL:
+        esal_k=esal_k.append(int(s[0]))
+    # cost of $/km for emissions based on the type of truck get the cost matrix
     ghg_k = [0, 0, 0.07334474, 0.07334474]
+    datatruckType = db.engine.execute("SELECT type FROM truck").fetchall()
+    for s in datatruckType:
+        if str(s[0]) =='Single Unit Long Haul':
+            print('get matrix 1')
+            matrixTruck1data =db.engine.execute("SELECT * FROM adjMatrixEmissions").fetchall()
+        if str(s[0]) =='Single Unit Short Haul':
+            print('matrix 2')
+            matrixTruck2data=db.engine.execute("SELECT * FROM adjMatrixEmissionsTruckType2").fetchall()
+        if str(s[0]) =='Single Unit Short Haul':
+            print('matrix 3')
+            matrixTruck3data=db.engine.execute("SELECT * FROM adjMatrixEmissionsTruckType3").fetchall()
 
     # initialize
     remaining_Cust = np.array(db.engine.execute("SELECT * FROM demand").fetchall())
@@ -454,6 +469,8 @@ def dijstra ():
     dataStartNode = db.engine.execute("SELECT clcLocation FROM currlocation").fetchall()
     init_graph_Damages = {}
     init_graph_Emissions={}
+    init_graph_EmissionsTruckType2 = {}
+    init_graph_EmissionsTruckType3 = {}
     for row in dataLookUp:
         nodes.append(str(row[1]))
         #print(row)
@@ -461,6 +478,8 @@ def dijstra ():
     for node in nodes:
         init_graph_Damages[node] = {}
         init_graph_Emissions[node] = {}
+        init_graph_EmissionsTruckType2[node] = {}
+        init_graph_EmissionsTruckType3[node] = {}
 
     #add the costs to the graph
     for row in dataDamages:
@@ -472,13 +491,30 @@ def dijstra ():
         for s in speedNeeded:
             lookSpeed = str(s[0])
         #take that speed and get the correct emissions for exactly one type of truck
-        dataEmissions = db.engine.execute("SELECT costperKm FROM emissions WHERE typeTruck LIKE 'Single Unit Short Haul' AND speed LIKE '{}' AND gasVDiesel LIKE 'diesel'".format(lookSpeed)).fetchall()
+        dataEmissions = db.engine.execute(
+            "SELECT costperKm FROM emissions WHERE typeTruck LIKE 'Single Unit Short Haul' AND speed LIKE '{}' AND gasVDiesel LIKE 'diesel'".format(lookSpeed)).fetchall()
         for s in dataEmissions:
             lookE = float(s[0])
         init_graph_Emissions[str(int(row[1]))][str(int(row[2]))] = float(row[3])*float(lookE)
 
+        dataEmissions = db.engine.execute(
+            "SELECT costperKm FROM emissions WHERE typeTruck LIKE 'Single Unit Long Haul' AND speed LIKE '{}' AND gasVDiesel LIKE 'diesel'".format(
+                lookSpeed)).fetchall()
+        for s in dataEmissions:
+            lookE = float(s[0])
+        init_graph_EmissionsTruckType2[str(int(row[1]))][str(int(row[2]))] = float(row[3]) * float(lookE)
+
+        dataEmissions = db.engine.execute(
+            "SELECT costperKm FROM emissions WHERE typeTruck LIKE 'Combination Long Haul' AND speed LIKE '{}' AND gasVDiesel LIKE 'diesel'".format(
+                lookSpeed)).fetchall()
+        for s in dataEmissions:
+            lookE = float(s[0])
+        init_graph_EmissionsTruckType3[str(int(row[1]))][str(int(row[2]))] = float(row[3]) * float(lookE)
+
     graphDamage = capstone.Graph(nodes, init_graph_Damages)
     graphEmission = capstone.Graph(nodes, init_graph_Emissions)
+    graphEmissionTruck2 = capstone.Graph(nodes, init_graph_Emissions)
+    graphEmissionTruck3 = capstone.Graph(nodes, init_graph_Emissions)
     #previous_nodes, shortest_path = dijkstra_algorithm(graph=graphDamage, start_node="1")
     #previous_nodes1, shortest_path1 = dijkstra_algorithm(graph=graphEmission, start_node="1")
     #for each node in the demand find the path that needs to be taken and into a dictionary and an adjaceny matrix
@@ -486,6 +522,8 @@ def dijstra ():
         starNode=str(int(s[0]))
     mapDictionary={}
     mapDictionary1 = {}
+    mapDictionaryTruck2 = {}
+    mapDictionaryTruck3 = {}
     #starNode = "1"
     nodeListDemand=np.array([starNode])
     toadd =np.array([])
@@ -495,28 +533,45 @@ def dijstra ():
 
     adjacencyMatrix=np.array([nodeListDemand])
     adjacencyMatrix1 = np.array([nodeListDemand])
+    adjacencyMatrixTruck2 = np.array([nodeListDemand])
+    adjacencyMatrixTruck3 = np.array([nodeListDemand])
     toadd=np.empty([1,nodeListDemand.size])
     toadd1 = np.empty([1, nodeListDemand.size])
-    #for every demand node loop yo create an adjacency matrix
+    toaddTruck2 = np.empty([1, nodeListDemand.size])
+    toaddTruck3 = np.empty([1, nodeListDemand.size])
+    #for every demand node loop you create an adjacency matrix
     for idx in range(nodeListDemand.size):
         starNode=str(nodeListDemand[idx])
         previous_nodes, shortest_path = dijkstra_algorithm(graph=graphDamage, start_node=starNode)
         previous_nodes1, shortest_path1 = dijkstra_algorithm(graph=graphEmission, start_node=starNode)
+        previous_nodes2, shortest_path2 = dijkstra_algorithm(graph=graphEmissionTruck2, start_node=starNode)
+        previous_nodes3, shortest_path3 = dijkstra_algorithm(graph=graphEmissionTruck3, start_node=starNode)
         for idx2 in range(nodeListDemand.size):
             if idx==idx2:
                 #put inf because node to itself is infinity
                 toadd[0][idx2] =100000000000000000
+                toadd1[0][idx2] = 100000000000000000
+                toaddTruck2[0][idx2] = 100000000000000000
+                toaddTruck3[0][idx2] = 100000000000000000
             else:
                 #startNode = str(int(nodeListDemand[idx]))
                 endNode = str(int(nodeListDemand[idx2]))
                 pathResult =print_result(previous_nodes, shortest_path, start_node=starNode, target_node=endNode)
                 pathResult1 = print_result(previous_nodes1, shortest_path1, start_node=starNode, target_node=endNode)
+                pathResult2 = print_result(previous_nodes2, shortest_path2, start_node=starNode, target_node=endNode)
+                pathResult3 = print_result(previous_nodes3, shortest_path3, start_node=starNode, target_node=endNode)
                 mapDictionary["{},{}".format(starNode,endNode)]=pathResult
-                mapDictionary["{},{}".format(starNode, endNode)] = pathResult1
+                mapDictionary1["{},{}".format(starNode, endNode)] = pathResult1
+                mapDictionaryTruck2["{},{}".format(starNode, endNode)] = pathResult2
+                mapDictionaryTruck3["{},{}".format(starNode, endNode)] = pathResult3
                 toadd[0][idx2]=shortest_path[endNode]
                 toadd1[0][idx2] = shortest_path1[endNode]
+                toaddTruck2[0][idx2] = shortest_path2[endNode]
+                toaddTruck3[0][idx2] = shortest_path3[endNode]
         adjacencyMatrix=np.append(adjacencyMatrix,toadd,axis=0)
         adjacencyMatrix1 = np.append(adjacencyMatrix1, toadd1, axis=0)
+        adjacencyMatrixTruck2 = np.append(adjacencyMatrix1, toadd1, axis=0)
+        adjacencyMatrixTruck3 = np.append(adjacencyMatrix1, toadd1, axis=0)
     #save the dictionary and the matrix
     dfAdj = pd.DataFrame(adjacencyMatrix)
     dfMapDict = pd.DataFrame.from_dict(mapDictionary, orient='index')
@@ -526,6 +581,14 @@ def dijstra ():
     dfMapDict = pd.DataFrame.from_dict(mapDictionary1, orient='index')
     dfAdj.to_sql('adjMatrixEmissions', con=db.engine, if_exists='replace', index_label='id')
     dfMapDict.to_sql('MapDictionaryEmissions', con=db.engine, if_exists='replace', index_label='id')
+    dfAdj = pd.DataFrame(adjacencyMatrixTruck2)
+    dfMapDict = pd.DataFrame.from_dict(mapDictionaryTruck2, orient='index')
+    dfAdj.to_sql('adjMatrixEmissionsTruckType2', con=db.engine, if_exists='replace', index_label='id')
+    dfMapDict.to_sql('MapDictionaryEmissionsTruckType2', con=db.engine, if_exists='replace', index_label='id')
+    dfAdj = pd.DataFrame(adjacencyMatrixTruck3)
+    dfMapDict = pd.DataFrame.from_dict(mapDictionaryTruck3, orient='index')
+    dfAdj.to_sql('adjMatrixEmissionsTruckType3', con=db.engine, if_exists='replace', index_label='id')
+    dfMapDict.to_sql('MapDictionaryEmissionsTruckType3', con=db.engine, if_exists='replace', index_label='id')
     return "completed"
 
 # Press the green button in the gutter to run the script.
