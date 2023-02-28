@@ -123,29 +123,7 @@ def heuristic():
         demand_Retailer=np.append(demand_Retailer,int(s[0]))
 
     dataadjacencyMatrix = db.engine.execute("SELECT * FROM adjMatrixDamages").fetchall()
-    #adjacencyMatrixDamage=[[]]
-    skip=True
-    fillRow1=True
-    addRow=[]
-    insert2D=1
-    adjacencyMatrixDamage=[[]]
-    for s in dataadjacencyMatrix:
-        if not skip:
-            # get from col 1 to the end of the row and add the row underneath
-            if fillRow1:
-                for eachs in s:
-                    addRow=np.append(addRow, eachs)
-                adjacencyMatrixDamage.insert(0, addRow)
-                fillRow1 = False
-                addRow=[]
-            else:
-                for eachs in s:
-                    addRow=np.append(addRow, eachs)
-                adjacencyMatrixDamage.insert(insert2D, addRow)
-                addRow = []
-                insert2D=insert2D+1
-        else:
-            skip=False
+    adjacencyMatrixDamage=make_adjMatrix(dataadjacencyMatrix)
 
     #for ESAL damage based on vehicle, mutiply the adj cost matrix by esal in truck table
     dataESAL = db.engine.execute("SELECT esal FROM truck").fetchall()
@@ -158,18 +136,21 @@ def heuristic():
         else:
             esal_k=np.append(esal_k,int(s[0]))
     # cost of $/km for emissions based on the type of truck get the cost matrix
-    ghg_k = [0, 0, 0.07334474, 0.07334474]
+    #ghg_k = [0, 0, 0.07334474, 0.07334474]
     datatruckType = db.engine.execute("SELECT type FROM truck").fetchall()
     for s in datatruckType:
         if str(s[0]) =='Single Unit Long Haul':
             print('get matrix 1')
             matrixTruck1data =db.engine.execute("SELECT * FROM adjMatrixEmissions").fetchall()
+            adjMatrixTruck1 = make_adjMatrix(matrixTruck1data)
         if str(s[0]) =='Single Unit Short Haul':
             print('matrix 2')
             matrixTruck2data=db.engine.execute("SELECT * FROM adjMatrixEmissionsTruckType2").fetchall()
+            adjMatrixTruck2 = make_adjMatrix(matrixTruck2data)
         if str(s[0]) =='Combination Short Haul':
             print('matrix 3')
             matrixTruck3data=db.engine.execute("SELECT * FROM adjMatrixEmissionsTruckType3").fetchall()
+            adjMatrixTruck3 = make_adjMatrix(matrixTruck3data)
 
     # initialize
     dataremaining_Cust = np.array(db.engine.execute("SELECT node_id FROM demand").fetchall())
@@ -626,6 +607,33 @@ def dijstra ():
     dfAdj.to_sql('adjMatrixEmissionsTruckType3', con=db.engine, if_exists='replace', index_label='id')
     dfMapDict.to_sql('MapDictionaryEmissionsTruckType3', con=db.engine, if_exists='replace', index_label='id')
     return "completed"
+
+#this function makes an adjacency matrix from a sql query output
+#it returns the dictionary containg the adjacency matrix
+def make_adjMatrix(dataadjacencyMatrix):
+    skip = True
+    fillRow1 = True
+    addRow = []
+    insert2D = 1
+    adjacencyMatrixDamage = [[]]
+    for s in dataadjacencyMatrix:
+        if not skip:
+            # get from col 1 to the end of the row and add the row underneath
+            if fillRow1:
+                for eachs in s:
+                    addRow = np.append(addRow, eachs)
+                adjacencyMatrixDamage.insert(0, addRow)
+                fillRow1 = False
+                addRow = []
+            else:
+                for eachs in s:
+                    addRow = np.append(addRow, eachs)
+                adjacencyMatrixDamage.insert(insert2D, addRow)
+                addRow = []
+                insert2D = insert2D + 1
+        else:
+            skip = False
+    return adjacencyMatrixDamage
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
