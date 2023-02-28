@@ -11,6 +11,8 @@ import random2
 import folium
 import capstone
 from capstone import dijkstra_algorithm, print_result
+import osmnx as ox
+import networkx as nx
 from openpyxl import Workbook
 
 app = Flask(__name__)
@@ -102,6 +104,16 @@ def runModel ():
     iframe = map1.get_root()._repr_html_()
     return render_template('runModel.html', iframe=iframe,)
 
+@app.route("/compareEVtoNonEV")
+def compare():
+    # display a map with the shortest paths displayed between EV and Non-EVs
+    map2 = folium.Map(location=[45.5236, -122.6750])
+    body_html = map2.get_root().html.render()
+    #map1.save("./templates/map.html")
+    map2.get_root().width = "1500px"
+    map2.get_root().height = "800px"
+    iframe = map2.get_root()._repr_html_()
+    return render_template('compare.html', iframe=iframe)
 
 def heuristic():
     numTrucksTotal = db.engine.execute("select count(*) from truck").fetchall()
