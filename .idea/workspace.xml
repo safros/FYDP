@@ -84,17 +84,20 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/main.py</url>
-          <line>124</line>
-          <option name="timeStamp" value="23" />
+          <line>161</line>
+          <option name="timeStamp" value="28" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/main.py</url>
+          <line>198</line>
+          <option name="timeStamp" value="29" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
-        <watch expression="float(lookE)" />
-        <watch expression="float(row[3])" />
-        <watch expression="int(numTrucksTotal[0]._data)" />
-        <watch expression="numTrucksTotal[0]._data" />
+        <watch expression="adjacencyMatrixDamage[0][5]" language="Python" />
+        <watch expression="s._data" />
       </configuration>
     </watches-manager>
   </component>
