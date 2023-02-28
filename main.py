@@ -118,24 +118,45 @@ def heuristic():
         truck_capacity=np.append(truck_capacity,int(s[0]))
 
     datademand_Retailer = db.engine.execute("SELECT demand_units FROM demand").fetchall()
-    demand_Retailer=np.array()
+    demand_Retailer=[]
     for s in datademand_Retailer:
         demand_Retailer=np.append(demand_Retailer,int(s[0]))
 
     dataadjacencyMatrix = db.engine.execute("SELECT * FROM adjMatrixDamages").fetchall()
+    #adjacencyMatrixDamage=[[]]
     skip=True
+    fillRow1=True
+    addRow=[]
+    insert2D=1
+    adjacencyMatrixDamage=[[]]
     for s in dataadjacencyMatrix:
         if not skip:
             # get from col 1 to the end of the row and add the row underneath
-            adjacencyMatrix = np.append(adjacencyMatrix, s[1:demand_Retailer.size], axis=0)
+            if fillRow1:
+                for eachs in s:
+                    addRow=np.append(addRow, eachs)
+                adjacencyMatrixDamage.insert(0, addRow)
+                fillRow1 = False
+                addRow=[]
+            else:
+                for eachs in s:
+                    addRow=np.append(addRow, eachs)
+                adjacencyMatrixDamage.insert(insert2D, addRow)
+                addRow = []
+                insert2D=insert2D+1
         else:
             skip=False
 
     #for ESAL damage based on vehicle, mutiply the adj cost matrix by esal in truck table
     dataESAL = db.engine.execute("SELECT esal FROM truck").fetchall()
     esal_k = []
+    numNonEv=0
     for s in dataESAL:
-        esal_k=esal_k.append(int(s[0]))
+        if s._data[0] is None:
+            #do nothing
+            numNonEv=numNonEv+1
+        else:
+            esal_k=np.append(esal_k,int(s[0]))
     # cost of $/km for emissions based on the type of truck get the cost matrix
     ghg_k = [0, 0, 0.07334474, 0.07334474]
     datatruckType = db.engine.execute("SELECT type FROM truck").fetchall()
@@ -146,15 +167,26 @@ def heuristic():
         if str(s[0]) =='Single Unit Short Haul':
             print('matrix 2')
             matrixTruck2data=db.engine.execute("SELECT * FROM adjMatrixEmissionsTruckType2").fetchall()
-        if str(s[0]) =='Single Unit Short Haul':
+        if str(s[0]) =='Combination Short Haul':
             print('matrix 3')
             matrixTruck3data=db.engine.execute("SELECT * FROM adjMatrixEmissionsTruckType3").fetchall()
 
     # initialize
-    remaining_Cust = np.array(db.engine.execute("SELECT * FROM demand").fetchall())
-    remaining_Demand = np.array(db.engine.execute("SELECT * FROM demand").fetchall())
-    remaining_truck_capacity = np.array(db.engine.execute("SELECT * FROM truck").fetchall())
-    currLocation = 0
+    dataremaining_Cust = np.array(db.engine.execute("SELECT node_id FROM demand").fetchall())
+    remaining_Cust=[]
+    for s in dataremaining_Cust:
+        remaining_Cust=np.append(remaining_Cust,int(s[0]))
+    dataremaining_Demand = np.array(db.engine.execute("SELECT demand_units FROM demand").fetchall())
+    remaining_Demand=[]
+    for s in dataremaining_Demand:
+        remaining_Demand=np.append(remaining_Demand,int(s[0]))
+    dataremaining_truck_capacity = np.array(db.engine.execute("SELECT capacity FROM truck").fetchall())
+    remaining_truck_capacity = []
+    for s in dataremaining_truck_capacity:
+        remaining_truck_capacity = np.append(remaining_truck_capacity, int(s[0]))
+    datacurrLocation = db.engine.execute("SELECT clcLocation FROM currlocation").fetchall()
+    for s in datacurrLocation:
+        currLocation=int(s[0])
     numTruck = 0
     #loadPerTruck = {0: np.array([]), 1: np.array([]), 2: np.array([]), 3: np.array([])}
     # make the truck paths dynamically
@@ -564,28 +596,32 @@ def dijstra ():
                 mapDictionary1["{},{}".format(starNode, endNode)] = pathResult1
                 mapDictionaryTruck2["{},{}".format(starNode, endNode)] = pathResult2
                 mapDictionaryTruck3["{},{}".format(starNode, endNode)] = pathResult3
-                toadd[0][idx2]=shortest_path[endNode]
-                toadd1[0][idx2] = shortest_path1[endNode]
-                toaddTruck2[0][idx2] = shortest_path2[endNode]
-                toaddTruck3[0][idx2] = shortest_path3[endNode]
+                toadd[0][idx2]=float(shortest_path[endNode])
+                toadd1[0][idx2] = float(shortest_path1[endNode])
+                toaddTruck2[0][idx2] = float(shortest_path2[endNode])
+                toaddTruck3[0][idx2] = float(shortest_path3[endNode])
         adjacencyMatrix=np.append(adjacencyMatrix,toadd,axis=0)
         adjacencyMatrix1 = np.append(adjacencyMatrix1, toadd1, axis=0)
-        adjacencyMatrixTruck2 = np.append(adjacencyMatrix1, toadd1, axis=0)
-        adjacencyMatrixTruck3 = np.append(adjacencyMatrix1, toadd1, axis=0)
+        adjacencyMatrixTruck2 = np.append(adjacencyMatrixTruck2, toadd1, axis=0)
+        adjacencyMatrixTruck3 = np.append(adjacencyMatrixTruck3, toadd1, axis=0)
     #save the dictionary and the matrix
     dfAdj = pd.DataFrame(adjacencyMatrix)
+    dfAdj = dfAdj.astype(float)
     dfMapDict = pd.DataFrame.from_dict(mapDictionary, orient='index')
     dfAdj.to_sql('adjMatrixDamages', con=db.engine, if_exists='replace', index_label='id')
     dfMapDict.to_sql('MapDictionaryDamages',con=db.engine,if_exists='replace', index_label='id')
     dfAdj = pd.DataFrame(adjacencyMatrix1)
+    dfAdj = dfAdj.astype(float)
     dfMapDict = pd.DataFrame.from_dict(mapDictionary1, orient='index')
     dfAdj.to_sql('adjMatrixEmissions', con=db.engine, if_exists='replace', index_label='id')
     dfMapDict.to_sql('MapDictionaryEmissions', con=db.engine, if_exists='replace', index_label='id')
     dfAdj = pd.DataFrame(adjacencyMatrixTruck2)
+    dfAdj = dfAdj.astype(float)
     dfMapDict = pd.DataFrame.from_dict(mapDictionaryTruck2, orient='index')
     dfAdj.to_sql('adjMatrixEmissionsTruckType2', con=db.engine, if_exists='replace', index_label='id')
     dfMapDict.to_sql('MapDictionaryEmissionsTruckType2', con=db.engine, if_exists='replace', index_label='id')
     dfAdj = pd.DataFrame(adjacencyMatrixTruck3)
+    dfAdj = dfAdj.astype(float)
     dfMapDict = pd.DataFrame.from_dict(mapDictionaryTruck3, orient='index')
     dfAdj.to_sql('adjMatrixEmissionsTruckType3', con=db.engine, if_exists='replace', index_label='id')
     dfMapDict.to_sql('MapDictionaryEmissionsTruckType3', con=db.engine, if_exists='replace', index_label='id')
