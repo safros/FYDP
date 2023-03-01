@@ -92,7 +92,7 @@ def runModel ():
     #call dijstra's algorithm on the data to create the adj matrix and the shortest path mapping
     adjacencymatrix = dijstra()
     #call heuristic
-    anArray = heuristic()
+    #TEMP COMMENT anArray = heuristic()
     #running the opti on Gurobi
 
     #display a map of the final solution
@@ -107,13 +107,75 @@ def runModel ():
 @app.route("/compareEVtoNonEV")
 def compare():
     # display a map with the shortest paths displayed between EV and Non-EVs
-    map2 = folium.Map(location=[45.5236, -122.6750])
+    map2 = folium.Map(location=[43.40205, -80.5])
     body_html = map2.get_root().html.render()
     #map1.save("./templates/map.html")
     map2.get_root().width = "1500px"
     map2.get_root().height = "800px"
+    #adapted from https://stackoverflow.com/questions/60578408/is-it-possible-to-draw-paths-in-folium
+    ox.config(log_console=True, use_cache=True)
+    G_drive = ox.graph_from_place('Kitchener, Ontario, Canada',
+                                 network_type='drive')
+    #for every demand node to every other demand node
+    #get the path from mapdictionary
+    #draw each path with origin and destination nodes
+    #add to the map
+    mapDictionaryDamages = db.engine.execute("SELECT * FROM MapDictionaryDamages").fetchall()
+    mapDictionaryEmissions = db.engine.execute("SELECT * FROM MapDictionaryEmissions").fetchall()
+    route=[]
+    for s in mapDictionaryDamages:
+        pairing = s[0]
+        nonEVPath=[]
+        for i in s[1:]:
+            if i is not None:
+                nonEVPath.append(i)
+            else:
+                break
+
+        #loop over the list
+        for i in range(0,len(nonEVPath)-1):
+            #get the latitude and longitude for the list
+            orig_node= getLatAndLog(nonEVPath[i])
+            dest_node=getLatAndLog(nonEVPath[i+1])
+            loc = [(orig_node[0], orig_node[1]), (dest_node[0], dest_node[1])]
+            folium.PolyLine(loc,
+                        color='red',
+                        weight=15,
+                        opacity=0.8).add_to(map2)
+    for s in mapDictionaryEmissions:
+        pairing = s[0]
+        EVPath = []
+        #orig_node = ox.nearest_nodes(G_drive, 40.748441, -73.4)
+        #dest_node = ox.nearest_nodes(G_drive,40.748441, -73.4)
+        #route.append(nx.shortest_path(G_drive,orig_node, dest_node,weight=2))
+        for i in s[1:]:
+            if i is not None:
+                EVPath.append(i)
+            else:
+                break
+
+        # loop over the list
+        for i in range(0, len(EVPath) - 1):
+            # get the latitude and longitude for the list
+            orig_node = getLatAndLog(EVPath[i])
+            dest_node = getLatAndLog(EVPath[i + 1])
+            loc = [(orig_node[0], orig_node[1]), (dest_node[0], dest_node[1])]
+            folium.PolyLine(loc,
+                            color='red',
+                            weight=15,
+                            opacity=0.8).add_to(map2)
+
+    #map2 = ox.plot_route_folium(G_drive, route)
     iframe = map2.get_root()._repr_html_()
     return render_template('compare.html', iframe=iframe)
+
+#get the latitude and logitude of any point if given the node_id
+def getLatAndLog (currLocation):
+    datanodelookup = db.engine.execute("SELECT * FROM lookUp where lookup_ID ={}".format(currLocation)).fetchall()
+    for s in datanodelookup:
+        latnum = float(s[2])
+        lognum = float(s[3])
+    return  latnum,lognum
 
 def heuristic():
     numTrucksTotal = db.engine.execute("select count(*) from truck").fetchall()
