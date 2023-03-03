@@ -97,9 +97,21 @@ def runModel ():
     #display a map of the final solution
     map1 = folium.Map(location=[43.40205, -80.5])
     body_html = map1.get_root().html.render()
-    map1.save("./templates/map.html")
+    #map1.save("./templates/map.html")
     map1.get_root().width = "1500px"
     map1.get_root().height = "800px"
+    rand_color=[]
+    for s in range(1,anArray[3]):
+        rand_color.append((random2.randrange(255), random2.randrange(255), random2.randrange(255)))
+    for s in range(0,anArray[3]-1):
+        pathTruck= anArray[s]
+        for i in range(0,pathTruck.s):
+            actualOrigin= anArray[1].get(pathTruck[i])
+            actualDestination = anArray[1].get(pathTruck[i+1])
+            origin_node=getLatAndLog(actualOrigin)
+            destination_node=getLatAndLog(actualDestination)
+            loc=[(origin_node[0],origin_node[1]),(destination_node[0],destination_node[1])]
+            folium.PolyLine(loc, color=rand_color[s],weight=10, opacity=0.6).add_to(map1)
     iframe = map1.get_root()._repr_html_()
     return render_template('runModel.html', iframe=iframe,)
 
@@ -236,19 +248,21 @@ def heuristic():
 
     # initialize
     dataremaining_Cust = np.array(db.engine.execute("SELECT node_id FROM demand").fetchall())
-    remaining_Cust=[]
+    remaining_CustTmp=[]
     #customerNode =[]
     indexFinder= {}
     idxer=0
     for s in dataremaining_Cust:
         #customerNode=np.append(customerNode,int(s[0]))
-        remaining_Cust.append(idxer)
+        remaining_CustTmp.append(idxer)
         indexFinder[idxer]=int(s[0])
-        idxer+1
+        idxer=idxer+1
+    remaining_Cust=np.array(remaining_CustTmp)
     dataremaining_Demand = np.array(db.engine.execute("SELECT demand_units FROM demand").fetchall())
-    remaining_Demand=[]
+    remaining_DemandTmp=[]
     for s in dataremaining_Demand:
-        remaining_Demand.append(int(s[0]))
+        remaining_DemandTmp.append(int(s[0]))
+    remaining_Demand=np.array(remaining_DemandTmp)
     dataremaining_truck_capacity = np.array(db.engine.execute("SELECT capacity FROM truck").fetchall())
     remaining_truck_capacity = []
     for s in dataremaining_truck_capacity:
@@ -461,8 +475,8 @@ def heuristic():
     # exchange or add into routes
     for looping in range(0, 100):
         # pick 2 random truck routes
-        r1 = random2.randint(0, numTrucksTotal)
-        r2 = random2.randint(0, numTrucksTotal)
+        r1 = random2.randint(0, numTrucksTotal-1)
+        r2 = random2.randint(0, numTrucksTotal-1)
         if r1 == r2:
             if r1 != 0:
                 r1 -= 1
@@ -580,7 +594,7 @@ def heuristic():
 
     print(incumbent_switch)
 
-    return truck_capacity
+    return truck_paths,indexFinder, objValue, numTrucksTotal
 
 def dijstra ():
     #get all the data needed for the graph
