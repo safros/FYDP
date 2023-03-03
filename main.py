@@ -100,18 +100,19 @@ def runModel ():
     #map1.save("./templates/map.html")
     map1.get_root().width = "1500px"
     map1.get_root().height = "800px"
-    rand_color=[]
-    for s in range(1,anArray[3]):
-        rand_color.append((random2.randrange(255), random2.randrange(255), random2.randrange(255)))
+    rand_color=['red', 'blue', 'green', 'purple', 'orange', 'darkred', 'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue', 'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen', 'gray', 'black', 'lightgray']
+    #for s in range(1,anArray[3]):
+        #rand_color.append("%06x" % random2.randint(0, 0xFFFFFF))
     for s in range(0,anArray[3]-1):
-        pathTruck= anArray[s]
-        for i in range(0,pathTruck.s):
-            actualOrigin= anArray[1].get(pathTruck[i])
-            actualDestination = anArray[1].get(pathTruck[i+1])
-            origin_node=getLatAndLog(actualOrigin)
-            destination_node=getLatAndLog(actualDestination)
-            loc=[(origin_node[0],origin_node[1]),(destination_node[0],destination_node[1])]
-            folium.PolyLine(loc, color=rand_color[s],weight=10, opacity=0.6).add_to(map1)
+        pathTruck= anArray[0].get(s)
+        if pathTruck.size>2: #the truck is used
+            for i in range(0,pathTruck.size-2):
+                actualOrigin= anArray[1].get(pathTruck[i])
+                actualDestination = anArray[1].get(pathTruck[i+1])
+                origin_node=getLatAndLog(actualOrigin)
+                destination_node=getLatAndLog(actualDestination)
+                loc=[(origin_node[0],origin_node[1]),(destination_node[0],destination_node[1])]
+                folium.PolyLine(loc, color=rand_color[s],weight=15, opacity=0.8).add_to(map1)
     iframe = map1.get_root()._repr_html_()
     return render_template('runModel.html', iframe=iframe,)
 
@@ -308,7 +309,7 @@ def heuristic():
                     #min_cost = adjacencyMatrix[rc][currLocation] * (esal_k[numTruck] + ghg_k[numTruck])
                     min_cost = adjacencyMatrix[rc][currLocation]+esal_k[numTruck]*adjacencyMatrixDamage[rc][currLocation]
             # add the customer to the path of the truck
-            truck_paths.update({numTruck: np.append(truck_paths.get(numTruck), nearest_neighbour + 1)})
+            truck_paths.update({numTruck: np.append(truck_paths.get(numTruck), nearest_neighbour)})
             # update current location
             currLocation = nearest_neighbour + 1
             # if the demand of the customer > remaining truck capacity
@@ -337,8 +338,11 @@ def heuristic():
     #truck_paths.update({1: np.append(truck_paths.get(1), 0)})
     #truck_paths.update({2: np.append(truck_paths.get(2), 0)})
     #truck_paths.update({3: np.append(truck_paths.get(3), 0)})
-    for i in range(0,numTrucksTotal):
-        truck_paths.update({i:np.append(truck_paths.get(i), 0)})
+    dataStartNode = db.engine.execute("SELECT clcLocation FROM currlocation").fetchall()
+    for s in dataStartNode:
+        CLCstart= int(s[0])
+    #for i in range(0,numTrucksTotal):
+        #truck_paths.update({i:np.append(truck_paths.get(i), CLCstart)})
 
     objValue = 0
     #costPerTruckPath = np.array([0.0, 0.0, 0.0, 0.0])
@@ -352,7 +356,7 @@ def heuristic():
             print("truck " + str(truck + 1) + " was not used")
         else:
             b = len(currPathtoCalc)
-            for p in range(b - 1):
+            for p in range(b - 2):
                 a = currPathtoCalc[p]
                 b = currPathtoCalc[p + 1]
                 #objValue = objValue + adjacencyMatrix[a][b] * (esal_k[truck] + ghg_k[truck])
@@ -472,18 +476,26 @@ def heuristic():
 
     curr_truck_paths = truck_paths.copy()
     incumbent_switch = truck_paths.copy()
+    numTrucksInUse=0
+    for s in truck_paths.keys():
+        if truck_paths[s].size>2:
+            #truck in use
+            numTrucksInUse=numTrucksInUse+1
     # exchange or add into routes
     for looping in range(0, 100):
         # pick 2 random truck routes
-        r1 = random2.randint(0, numTrucksTotal-1)
-        r2 = random2.randint(0, numTrucksTotal-1)
+        r1 = random2.randint(0, numTrucksInUse)
+        r2 = random2.randint(0, numTrucksInUse)
         if r1 == r2:
             if r1 != 0:
                 r1 -= 1
             elif r2 != 0:
                 r2 -= 1
             else:
-                r1 += 1
+                if r1==numTrucksInUse:
+                    r1-=1
+                else:
+                    r1+=1
         # curr min distance
         min_cost = costPerTruckPath[r1] + costPerTruckPath[r2]
         # now we have two different routes
@@ -492,24 +504,10 @@ def heuristic():
         route2 = curr_truck_paths.get(r2).copy()
         len_route2 = len(route2)
         # pick a node to swap
-        if len_route1 == 2 or len_route2 == 2:
-            # picked a truck that was not in use
-            # NOTE IF THERE IS MORE THAN ONE TRUCK NOT IN USE THIS LOGIC NEEDS TO BE REDONE
-            if len_route1 == 2:
-                n2 = random2.randint(1, len_route2 - 2)
-                node2 = route2[n2]
-                node1 = 0
-                n1 = 0
-            if len_route2 == 2:
-                n1 = random2.randint(1, len_route1 - 2)
-                node1 = route1[n1]
-                node2 = 0
-                n2 = 0
-        else:
-            n1 = random2.randint(1, len_route1 - 2)
-            n2 = random2.randint(1, len_route2 - 2)
-            node1 = route1[n1]
-            node2 = route2[n2]
+        n1 = random2.randint(1, len_route1 - 1)
+        n2 = random2.randint(1, len_route2 - 1)
+        node1 = route1[n1]
+        node2 = route2[n2]
         if node1 != node2:
             if node1 in route2 or node2 in route1:
                 print("don't switch already in path")

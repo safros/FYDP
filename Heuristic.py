@@ -36,7 +36,7 @@ while (remaining_Demand.any() and numTruck <4) :
                 nearest_neighbour = rc
                 min_cost =adjacencyMatrix[rc] [currLocation]*(esal_k[numTruck]+ghg_k[numTruck])
         #add the customer to the path of the truck
-        truck_paths.update({numTruck : np.append(truck_paths.get(numTruck),nearest_neighbour+1)})
+        truck_paths.update({numTruck : np.append(truck_paths.get(numTruck),nearest_neighbour)})
         #update current location
         currLocation = nearest_neighbour+1
         #if the demand of the customer > remaining truck capacity
