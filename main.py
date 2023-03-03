@@ -11,6 +11,8 @@ import random2
 import folium
 import capstone
 from capstone import dijkstra_algorithm, print_result
+import osmnx as ox
+import networkx as nx
 from openpyxl import Workbook
 
 app = Flask(__name__)
@@ -91,17 +93,102 @@ def runModel ():
     adjacencymatrix = dijstra()
     #call heuristic
     anArray = heuristic()
-    #running the opti on Gurobi
 
     #display a map of the final solution
-    map1 = folium.Map(location=[45.5236, -122.6750])
+    map1 = folium.Map(location=[43.40205, -80.5])
     body_html = map1.get_root().html.render()
-    map1.save("./templates/map.html")
+    #map1.save("./templates/map.html")
     map1.get_root().width = "1500px"
     map1.get_root().height = "800px"
+    rand_color=['red', 'blue', 'green', 'purple', 'orange', 'darkred', 'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue', 'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen', 'gray', 'black', 'lightgray']
+    #for s in range(1,anArray[3]):
+        #rand_color.append("%06x" % random2.randint(0, 0xFFFFFF))
+    for s in range(0,anArray[3]-1):
+        pathTruck= anArray[0].get(s)
+        if pathTruck.size>2: #the truck is used
+            for i in range(0,pathTruck.size-2):
+                actualOrigin= anArray[1].get(pathTruck[i])
+                actualDestination = anArray[1].get(pathTruck[i+1])
+                origin_node=getLatAndLog(actualOrigin)
+                destination_node=getLatAndLog(actualDestination)
+                loc=[(origin_node[0],origin_node[1]),(destination_node[0],destination_node[1])]
+                folium.PolyLine(loc, color=rand_color[s],weight=15, opacity=0.8).add_to(map1)
     iframe = map1.get_root()._repr_html_()
     return render_template('runModel.html', iframe=iframe,)
 
+@app.route("/compareEVtoNonEV")
+def compare():
+    # display a map with the shortest paths displayed between EV and Non-EVs
+    map2 = folium.Map(location=[43.40205, -80.5])
+    body_html = map2.get_root().html.render()
+    #map1.save("./templates/map.html")
+    map2.get_root().width = "1500px"
+    map2.get_root().height = "800px"
+    #adapted from https://stackoverflow.com/questions/60578408/is-it-possible-to-draw-paths-in-folium
+    ox.config(log_console=True, use_cache=True)
+    G_drive = ox.graph_from_place('Kitchener, Ontario, Canada',
+                                 network_type='drive')
+    #for every demand node to every other demand node
+    #get the path from mapdictionary
+    #draw each path with origin and destination nodes
+    #add to the map
+    mapDictionaryDamages = db.engine.execute("SELECT * FROM MapDictionaryDamages").fetchall()
+    mapDictionaryEmissions = db.engine.execute("SELECT * FROM MapDictionaryEmissions").fetchall()
+    exceptSQLresult = db.engine.execute("SELECT * FROM MapDictionaryDamages Except SELECT * FROM MapDictionaryEmissions")
+    route=[]
+    for s in mapDictionaryDamages:
+        pairing = s[0]
+        nonEVPath=[]
+        for i in s[1:]:
+            if i is not None:
+                nonEVPath.append(i)
+            else:
+                break
+
+        #loop over the list
+        for i in range(0,len(nonEVPath)-1):
+            #get the latitude and longitude for the list
+            orig_node= getLatAndLog(nonEVPath[i])
+            dest_node=getLatAndLog(nonEVPath[i+1])
+            loc = [(orig_node[0], orig_node[1]), (dest_node[0], dest_node[1])]
+            folium.PolyLine(loc,
+                        color='red',
+                        weight=15,
+                        opacity=0.6).add_to(map2)
+    for s in mapDictionaryEmissions:
+        pairing = s[0]
+        EVPath = []
+        #orig_node = ox.nearest_nodes(G_drive, 40.748441, -73.4)
+        #dest_node = ox.nearest_nodes(G_drive,40.748441, -73.4)
+        #route.append(nx.shortest_path(G_drive,orig_node, dest_node,weight=2))
+        for i in s[1:]:
+            if i is not None:
+                EVPath.append(i)
+            else:
+                break
+
+        # loop over the list
+        for i in range(0, len(EVPath) - 1):
+            # get the latitude and longitude for the list
+            orig_node = getLatAndLog(EVPath[i])
+            dest_node = getLatAndLog(EVPath[i + 1])
+            loc = [(orig_node[0], orig_node[1]), (dest_node[0], dest_node[1])]
+            folium.PolyLine(loc,
+                            color='blue',
+                            weight=15,
+                            opacity=0.6).add_to(map2)
+
+    #map2 = ox.plot_route_folium(G_drive, route)
+    iframe = map2.get_root()._repr_html_()
+    return render_template('compare.html', iframe=iframe)
+
+#get the latitude and logitude of any point if given the node_id
+def getLatAndLog (currLocation):
+    datanodelookup = db.engine.execute("SELECT * FROM lookUp where lookup_ID ={}".format(currLocation)).fetchall()
+    for s in datanodelookup:
+        latnum = float(s[2])
+        lognum = float(s[3])
+    return  latnum,lognum
 
 def heuristic():
     numTrucksTotal = db.engine.execute("select count(*) from truck").fetchall()
@@ -123,70 +210,68 @@ def heuristic():
         demand_Retailer=np.append(demand_Retailer,int(s[0]))
 
     dataadjacencyMatrix = db.engine.execute("SELECT * FROM adjMatrixDamages").fetchall()
-    #adjacencyMatrixDamage=[[]]
-    skip=True
-    fillRow1=True
-    addRow=[]
-    insert2D=1
-    adjacencyMatrixDamage=[[]]
-    for s in dataadjacencyMatrix:
-        if not skip:
-            # get from col 1 to the end of the row and add the row underneath
-            if fillRow1:
-                for eachs in s:
-                    addRow=np.append(addRow, eachs)
-                adjacencyMatrixDamage.insert(0, addRow)
-                fillRow1 = False
-                addRow=[]
-            else:
-                for eachs in s:
-                    addRow=np.append(addRow, eachs)
-                adjacencyMatrixDamage.insert(insert2D, addRow)
-                addRow = []
-                insert2D=insert2D+1
-        else:
-            skip=False
+    adjacencyMatrixDamage=make_adjMatrix(dataadjacencyMatrix)
 
     #for ESAL damage based on vehicle, mutiply the adj cost matrix by esal in truck table
     dataESAL = db.engine.execute("SELECT esal FROM truck").fetchall()
     esal_k = []
+    truckType = []
     numNonEv=0
     for s in dataESAL:
         if s._data[0] is None:
             #do nothing
             numNonEv=numNonEv+1
         else:
-            esal_k=np.append(esal_k,int(s[0]))
+            esal_k.append(int(s[0]))
+            truckType.append('EV')
     # cost of $/km for emissions based on the type of truck get the cost matrix
-    ghg_k = [0, 0, 0.07334474, 0.07334474]
+    #ghg_k = [0, 0, 0.07334474, 0.07334474]
     datatruckType = db.engine.execute("SELECT type FROM truck").fetchall()
     for s in datatruckType:
         if str(s[0]) =='Single Unit Long Haul':
             print('get matrix 1')
             matrixTruck1data =db.engine.execute("SELECT * FROM adjMatrixEmissions").fetchall()
-        if str(s[0]) =='Single Unit Short Haul':
+            adjMatrixTruck1 = make_adjMatrix(matrixTruck1data)
+            truckType.append('Single Unit Long Haul')
+            esal_k.append(0)
+        elif str(s[0]) =='Single Unit Short Haul':
             print('matrix 2')
             matrixTruck2data=db.engine.execute("SELECT * FROM adjMatrixEmissionsTruckType2").fetchall()
-        if str(s[0]) =='Combination Short Haul':
+            adjMatrixTruck2 = make_adjMatrix(matrixTruck2data)
+            truckType.append('Single Unit Short Haul')
+            esal_k.append(0)
+        elif str(s[0]) =='Combination Short Haul':
             print('matrix 3')
             matrixTruck3data=db.engine.execute("SELECT * FROM adjMatrixEmissionsTruckType3").fetchall()
+            adjMatrixTruck3 = make_adjMatrix(matrixTruck3data)
+            truckType.append('Combination Short Haul')
+            esal_k.append(0)
 
     # initialize
     dataremaining_Cust = np.array(db.engine.execute("SELECT node_id FROM demand").fetchall())
-    remaining_Cust=[]
+    remaining_CustTmp=[]
+    #customerNode =[]
+    indexFinder= {}
+    idxer=0
     for s in dataremaining_Cust:
-        remaining_Cust=np.append(remaining_Cust,int(s[0]))
+        #customerNode=np.append(customerNode,int(s[0]))
+        remaining_CustTmp.append(idxer)
+        indexFinder[idxer]=int(s[0])
+        idxer=idxer+1
+    remaining_Cust=np.array(remaining_CustTmp)
     dataremaining_Demand = np.array(db.engine.execute("SELECT demand_units FROM demand").fetchall())
-    remaining_Demand=[]
+    remaining_DemandTmp=[]
     for s in dataremaining_Demand:
-        remaining_Demand=np.append(remaining_Demand,int(s[0]))
+        remaining_DemandTmp.append(int(s[0]))
+    remaining_Demand=np.array(remaining_DemandTmp)
     dataremaining_truck_capacity = np.array(db.engine.execute("SELECT capacity FROM truck").fetchall())
     remaining_truck_capacity = []
     for s in dataremaining_truck_capacity:
         remaining_truck_capacity = np.append(remaining_truck_capacity, int(s[0]))
-    datacurrLocation = db.engine.execute("SELECT clcLocation FROM currlocation").fetchall()
-    for s in datacurrLocation:
-        currLocation=int(s[0])
+    #datacurrLocation = db.engine.execute("SELECT clcLocation FROM currlocation").fetchall()
+    #for s in datacurrLocation:
+        #currLocation=int(s[0])
+    currLocation =0
     numTruck = 0
     #loadPerTruck = {0: np.array([]), 1: np.array([]), 2: np.array([]), 3: np.array([])}
     # make the truck paths dynamically
@@ -198,17 +283,33 @@ def heuristic():
 
     while (remaining_Demand.any() and numTruck < numTrucksTotal):
         # check if the truck has more capacity
+        #get the truck's adjmatrix
+        if truckType[numTruck]=='Single Unit Long Haul':
+            adjacencyMatrix=adjMatrixTruck1
+        elif truckType[numTruck]=='Single Unit Short Haul':
+            adjacencyMatrix =adjMatrixTruck2
+        elif truckType[numTruck]=='Combination Short Haul':
+            adjacencyMatrix = adjMatrixTruck3
+        else: #the truck is an EV with no emissions matrix that is a 0 matrix
+            adjacencyMatrix=np.zeros((len(remaining_Cust)+1,len(remaining_Cust)+1))
+
         while (remaining_Cust.any()):  # remaining_truck_capacity[numTruck]>0 and
             nearest_neighbour = remaining_Cust[0];
-            min_cost = adjacencyMatrix[nearest_neighbour + 1][currLocation] * (esal_k[numTruck] + ghg_k[numTruck])
+            #find the index of the remaining customer
+            #nearest_neighbour = indexFinder.index(nearest_neighbour)
+            min_cost = adjacencyMatrix[nearest_neighbour + 1][currLocation]+ esal_k[numTruck]*adjacencyMatrixDamage[nearest_neighbour + 1][currLocation]
+            #min_cost=adjacencyMatrix[nearest_neighbour + 1][currLocation] * (esal_k[numTruck] + ghg_k[numTruck])
             # find the closest customer
             for rc in remaining_Cust:
-                if (adjacencyMatrix[rc + 1][currLocation] * (esal_k[numTruck] + ghg_k[numTruck]) < min_cost):
+                if (adjacencyMatrix[rc + 1][currLocation]+ esal_k[numTruck]*adjacencyMatrixDamage[rc + 1][currLocation]< min_cost):
+                    #(adjacencyMatrix[rc + 1][currLocation] * (esal_k[numTruck] + ghg_k[numTruck]) < min_cost):
                     # this is the customer we want to add to the path
                     nearest_neighbour = rc
-                    min_cost = adjacencyMatrix[rc][currLocation] * (esal_k[numTruck] + ghg_k[numTruck])
+                    #nearest_neighbour = indexFinder.index(nearest_neighbour)
+                    #min_cost = adjacencyMatrix[rc][currLocation] * (esal_k[numTruck] + ghg_k[numTruck])
+                    min_cost = adjacencyMatrix[rc][currLocation]+esal_k[numTruck]*adjacencyMatrixDamage[rc][currLocation]
             # add the customer to the path of the truck
-            truck_paths.update({numTruck: np.append(truck_paths.get(numTruck), nearest_neighbour + 1)})
+            truck_paths.update({numTruck: np.append(truck_paths.get(numTruck), nearest_neighbour)})
             # update current location
             currLocation = nearest_neighbour + 1
             # if the demand of the customer > remaining truck capacity
@@ -237,8 +338,11 @@ def heuristic():
     #truck_paths.update({1: np.append(truck_paths.get(1), 0)})
     #truck_paths.update({2: np.append(truck_paths.get(2), 0)})
     #truck_paths.update({3: np.append(truck_paths.get(3), 0)})
-    for i in range(0,numTrucksTotal):
-        truck_paths.update({i:np.append(truck_paths.get(i), 0)})
+    dataStartNode = db.engine.execute("SELECT clcLocation FROM currlocation").fetchall()
+    for s in dataStartNode:
+        CLCstart= int(s[0])
+    #for i in range(0,numTrucksTotal):
+        #truck_paths.update({i:np.append(truck_paths.get(i), CLCstart)})
 
     objValue = 0
     #costPerTruckPath = np.array([0.0, 0.0, 0.0, 0.0])
@@ -252,15 +356,18 @@ def heuristic():
             print("truck " + str(truck + 1) + " was not used")
         else:
             b = len(currPathtoCalc)
-            for p in range(b - 1):
+            for p in range(b - 2):
                 a = currPathtoCalc[p]
                 b = currPathtoCalc[p + 1]
-                objValue = objValue + adjacencyMatrix[a][b] * (esal_k[truck] + ghg_k[truck])
-                truckVal = truckVal + adjacencyMatrix[a][b] * (esal_k[truck] + ghg_k[truck])
+                #objValue = objValue + adjacencyMatrix[a][b] * (esal_k[truck] + ghg_k[truck])
+                objValue = objValue + adjacencyMatrix[a][b]+esal_k[truck]*adjacencyMatrixDamage[a][b]
+                #truckVal = truckVal + adjacencyMatrix[a][b] * (esal_k[truck] + ghg_k[truck])
+                truckVal=truckVal + adjacencyMatrix[a][b]+esal_k[truck]*adjacencyMatrixDamage[a][b]
             costPerTruckPath[truck] = truckVal
 
     print("paths of trucks: ")
     print(truck_paths)
+    print(indexFinder)
     print("Objective value: ")
     print(objValue)
     print("cost for each truck path: ")
@@ -303,7 +410,8 @@ def heuristic():
                 for m in range(b - 1):
                     a = currPath[m]
                     q = currPath[m + 1]
-                    distanceSum = distanceSum + adjacencyMatrix[a][q] * (esal_k[truck] + ghg_k[truck])
+                    #distanceSum = distanceSum + adjacencyMatrix[a][q] * (esal_k[truck] + ghg_k[truck])
+                    distanceSum = distanceSum + adjacencyMatrix[a][q]+esal_k[truck]*adjacencyMatrixDamage[a][q]
                 if distanceSum < min_dist:
                     min_dist = distanceSum
                     incumbent2_Opt = currPath.copy()
@@ -362,23 +470,32 @@ def heuristic():
             for p in range(b - 1):
                 a = route[p]
                 b = route[p + 1]
-                cost = cost + adjacencyMatrix[a][b] * (esal_k[truck] + ghg_k[truck])
+                #cost = cost + adjacencyMatrix[a][b] * (esal_k[truck] + ghg_k[truck])
+                cost=cost + adjacencyMatrix[a][b]+esal_k[truck]*adjacencyMatrixDamage[a][b]
             return cost
 
     curr_truck_paths = truck_paths.copy()
     incumbent_switch = truck_paths.copy()
+    numTrucksInUse=0
+    for s in truck_paths.keys():
+        if truck_paths[s].size>2:
+            #truck in use
+            numTrucksInUse=numTrucksInUse+1
     # exchange or add into routes
     for looping in range(0, 100):
         # pick 2 random truck routes
-        r1 = random2.randint(0, 3)
-        r2 = random2.randint(0, 3)
+        r1 = random2.randint(0, numTrucksInUse)
+        r2 = random2.randint(0, numTrucksInUse)
         if r1 == r2:
             if r1 != 0:
                 r1 -= 1
             elif r2 != 0:
                 r2 -= 1
             else:
-                r1 += 1
+                if r1==numTrucksInUse:
+                    r1-=1
+                else:
+                    r1+=1
         # curr min distance
         min_cost = costPerTruckPath[r1] + costPerTruckPath[r2]
         # now we have two different routes
@@ -387,24 +504,10 @@ def heuristic():
         route2 = curr_truck_paths.get(r2).copy()
         len_route2 = len(route2)
         # pick a node to swap
-        if len_route1 == 2 or len_route2 == 2:
-            # picked a truck that was not in use
-            # NOTE IF THERE IS MORE THAN ONE TRUCK NOT IN USE THIS LOGIC NEEDS TO BE REDONE
-            if len_route1 == 2:
-                n2 = random2.randint(1, len_route2 - 2)
-                node2 = route2[n2]
-                node1 = 0
-                n1 = 0
-            if len_route2 == 2:
-                n1 = random2.randint(1, len_route1 - 2)
-                node1 = route1[n1]
-                node2 = 0
-                n2 = 0
-        else:
-            n1 = random2.randint(1, len_route1 - 2)
-            n2 = random2.randint(1, len_route2 - 2)
-            node1 = route1[n1]
-            node2 = route2[n2]
+        n1 = random2.randint(1, len_route1 - 1)
+        n2 = random2.randint(1, len_route2 - 1)
+        node1 = route1[n1]
+        node2 = route2[n2]
         if node1 != node2:
             if node1 in route2 or node2 in route1:
                 print("don't switch already in path")
@@ -489,7 +592,7 @@ def heuristic():
 
     print(incumbent_switch)
 
-    return truck_capacity
+    return truck_paths,indexFinder, objValue, numTrucksTotal
 
 def dijstra ():
     #get all the data needed for the graph
@@ -626,6 +729,33 @@ def dijstra ():
     dfAdj.to_sql('adjMatrixEmissionsTruckType3', con=db.engine, if_exists='replace', index_label='id')
     dfMapDict.to_sql('MapDictionaryEmissionsTruckType3', con=db.engine, if_exists='replace', index_label='id')
     return "completed"
+
+#this function makes an adjacency matrix from a sql query output
+#it returns the dictionary containg the adjacency matrix
+def make_adjMatrix(dataadjacencyMatrix):
+    skip = True
+    fillRow1 = True
+    addRow = []
+    insert2D = 1
+    adjacencyMatrixDamage = [[]]
+    for s in dataadjacencyMatrix:
+        if not skip:
+            # get from col 1 to the end of the row and add the row underneath
+            if fillRow1:
+                for eachs in s[1:]:
+                    addRow = np.append(addRow, eachs)
+                adjacencyMatrixDamage.insert(0, addRow)
+                fillRow1 = False
+                addRow = []
+            else:
+                for eachs in s[1:]:
+                    addRow = np.append(addRow, eachs)
+                adjacencyMatrixDamage.insert(insert2D, addRow)
+                addRow = []
+                insert2D = insert2D + 1
+        else:
+            skip = False
+    return adjacencyMatrixDamage
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
