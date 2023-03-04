@@ -219,8 +219,10 @@ def heuristic():
     numNonEv=0
     for s in dataESAL:
         if s._data[0] is None:
-            #do nothing
+            #NON ev value
             numNonEv=numNonEv+1
+            #esal_k.append(int(s[0]))
+            esal_k.append(2)
         else:
             esal_k.append(int(s[0]))
             truckType.append('EV')
@@ -484,8 +486,8 @@ def heuristic():
     # exchange or add into routes
     for looping in range(0, 100):
         # pick 2 random truck routes
-        r1 = random2.randint(0, numTrucksInUse)
-        r2 = random2.randint(0, numTrucksInUse)
+        r1 = random2.randint(0, numTrucksInUse-1)
+        r2 = random2.randint(0, numTrucksInUse-1)
         if r1 == r2:
             if r1 != 0:
                 r1 -= 1
@@ -504,8 +506,8 @@ def heuristic():
         route2 = curr_truck_paths.get(r2).copy()
         len_route2 = len(route2)
         # pick a node to swap
-        n1 = random2.randint(1, len_route1 - 1)
-        n2 = random2.randint(1, len_route2 - 1)
+        n1 = random2.randint(1, len_route1-1)
+        n2 = random2.randint(1, len_route2-1)
         node1 = route1[n1]
         node2 = route2[n2]
         if node1 != node2:
