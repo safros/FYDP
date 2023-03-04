@@ -8,6 +8,11 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/instance/test.db" beforeDir="false" afterPath="$PROJECT_DIR$/instance/test.db" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/static/css/style.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/compare.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/compare.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/instructions.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/instructions.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/model.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/model.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/runModel.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/runModel.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -12,6 +12,7 @@ import folium
 import capstone
 from capstone import dijkstra_algorithm, print_result
 import osmnx as ox
+import branca
 import networkx as nx
 from openpyxl import Workbook
 
@@ -93,7 +94,7 @@ def runModel ():
     adjacencymatrix = dijstra()
     #call heuristic
     anArray = heuristic()
-
+    list =anArray[4]
     #display a map of the final solution
     map1 = folium.Map(location=[43.40205, -80.5])
     body_html = map1.get_root().html.render()
@@ -103,6 +104,7 @@ def runModel ():
     rand_color=['red', 'blue', 'green', 'purple', 'orange', 'darkred', 'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue', 'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen', 'gray', 'black', 'lightgray']
     #for s in range(1,anArray[3]):
         #rand_color.append("%06x" % random2.randint(0, 0xFFFFFF))
+
     for s in range(0,anArray[3]-1):
         pathTruck= anArray[0].get(s)
         if pathTruck.size>2: #the truck is used
@@ -112,9 +114,9 @@ def runModel ():
                 origin_node=getLatAndLog(actualOrigin)
                 destination_node=getLatAndLog(actualDestination)
                 loc=[(origin_node[0],origin_node[1]),(destination_node[0],destination_node[1])]
-                folium.PolyLine(loc, color=rand_color[s],weight=15, opacity=0.8).add_to(map1)
+                folium.PolyLine(loc, color=rand_color[s],weight=15, opacity=0.8, popup='<b>Vechicle {}</b>'.format(anArray[4].__getitem__(s))).add_to(map1)
     iframe = map1.get_root()._repr_html_()
-    return render_template('runModel.html', iframe=iframe,)
+    return render_template('runModel.html', iframe=iframe)
 
 @app.route("/compareEVtoNonEV")
 def compare():
@@ -594,7 +596,7 @@ def heuristic():
 
     print(incumbent_switch)
 
-    return truck_paths,indexFinder, objValue, numTrucksTotal
+    return truck_paths,indexFinder, objValue, numTrucksTotal,truckType
 
 def dijstra ():
     #get all the data needed for the graph

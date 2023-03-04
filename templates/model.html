@@ -20,7 +20,13 @@
       </header>
 
     <div class="content">
-    		<h1>This model has X parameters.</h1>
+            <h1> Description of the Model: </h1>
+    		<p>This model is based on an mTSP. The method used to solve it is heuristics.</p>
+            <p>The construction heuristic is based on a nearest neighbor approach. The improvement heuristic is a 2-opt switch.</p>
+            <p>The data is first put into a graph and the shortest path algorithm is run for each of the demand nodes and start location.</p>
+            <p>The shortest path creates an adjacency matrix. The matrix is used in the heuristic. </p>
+            <p>The model uses data collected from ARCGIS. The demand of the nodes is generated randomly. The demand nodes are chosen randomly. </p>
+            <p>The capacity of the trucks is generated.</p>
     </div>
 </body>
 </html>
