@@ -12,8 +12,9 @@ import folium
 import capstone
 from capstone import dijkstra_algorithm, print_result
 import osmnx as ox
-import branca
+from folium import plugins
 import networkx as nx
+import sklearn
 from openpyxl import Workbook
 
 app = Flask(__name__)
@@ -153,10 +154,8 @@ def compare():
             orig_node= getLatAndLog(nonEVPath[i])
             dest_node=getLatAndLog(nonEVPath[i+1])
             loc = [(orig_node[0], orig_node[1]), (dest_node[0], dest_node[1])]
-            folium.PolyLine(loc,
-                        color='red',
-                        weight=15,
-                        opacity=0.6).add_to(map2)
+            folium.PolyLine(loc, color='red',weight=15, opacity=0.6,popup='<b>NonEV</b>').add_to(map2)
+
     for s in mapDictionaryEmissions:
         pairing = s[0]
         EVPath = []
@@ -174,13 +173,15 @@ def compare():
             # get the latitude and longitude for the list
             orig_node = getLatAndLog(EVPath[i])
             dest_node = getLatAndLog(EVPath[i + 1])
+            #orig_node = ox.nearest_nodes(G_drive, orig_node[0], orig_node[1])
+            #dest_node = ox.nearest_nodes(G_drive,dest_node[0], dest_node[1])
             loc = [(orig_node[0], orig_node[1]), (dest_node[0], dest_node[1])]
-            folium.PolyLine(loc,
-                            color='blue',
-                            weight=15,
-                            opacity=0.6).add_to(map2)
+            folium.PolyLine(loc,color='blue',weight=15, opacity=0.6,popup='<b>EV</b>').add_to(map2)
+            #route=nx.shortest_path(G_drive,orig_node,dest_node)
+
 
     #map2 = ox.plot_route_folium(G_drive, route)
+    #folium.LayerControl().add_to(map2)
     iframe = map2.get_root()._repr_html_()
     return render_template('compare.html', iframe=iframe)
 
@@ -215,19 +216,13 @@ def heuristic():
     adjacencyMatrixDamage=make_adjMatrix(dataadjacencyMatrix)
 
     #for ESAL damage based on vehicle, mutiply the adj cost matrix by esal in truck table
-    dataESAL = db.engine.execute("SELECT esal FROM truck").fetchall()
+    dataESAL = db.engine.execute("SELECT esal,type FROM truck").fetchall()
     esal_k = []
     truckType = []
     numNonEv=0
     for s in dataESAL:
-        if s._data[0] is None:
-            #NON ev value
-            numNonEv=numNonEv+1
-            #esal_k.append(int(s[0]))
-            esal_k.append(2)
-        else:
-            esal_k.append(int(s[0]))
-            truckType.append('EV')
+        esal_k.append(int(s[0]))
+        truckType.append(s[1])
     # cost of $/km for emissions based on the type of truck get the cost matrix
     #ghg_k = [0, 0, 0.07334474, 0.07334474]
     datatruckType = db.engine.execute("SELECT type FROM truck").fetchall()
@@ -298,20 +293,20 @@ def heuristic():
             adjacencyMatrix=np.zeros((len(remaining_Cust)+1,len(remaining_Cust)+1))
 
         while (remaining_Cust.any()):  # remaining_truck_capacity[numTruck]>0 and
-            nearest_neighbour = remaining_Cust[0];
+            nearest_neighbour = remaining_Cust[0]
             #find the index of the remaining customer
             #nearest_neighbour = indexFinder.index(nearest_neighbour)
-            min_cost = adjacencyMatrix[nearest_neighbour + 1][currLocation]+ esal_k[numTruck]*adjacencyMatrixDamage[nearest_neighbour + 1][currLocation]
+            min_cost = esal_k[numTruck]*adjacencyMatrix[nearest_neighbour + 1][currLocation]+ esal_k[numTruck]*adjacencyMatrixDamage[nearest_neighbour + 1][currLocation]
             #min_cost=adjacencyMatrix[nearest_neighbour + 1][currLocation] * (esal_k[numTruck] + ghg_k[numTruck])
             # find the closest customer
             for rc in remaining_Cust:
-                if (adjacencyMatrix[rc + 1][currLocation]+ esal_k[numTruck]*adjacencyMatrixDamage[rc + 1][currLocation]< min_cost):
+                if (esal_k[numTruck]*adjacencyMatrix[rc + 1][currLocation]+ esal_k[numTruck]*adjacencyMatrixDamage[rc + 1][currLocation]< min_cost):
                     #(adjacencyMatrix[rc + 1][currLocation] * (esal_k[numTruck] + ghg_k[numTruck]) < min_cost):
                     # this is the customer we want to add to the path
                     nearest_neighbour = rc
                     #nearest_neighbour = indexFinder.index(nearest_neighbour)
                     #min_cost = adjacencyMatrix[rc][currLocation] * (esal_k[numTruck] + ghg_k[numTruck])
-                    min_cost = adjacencyMatrix[rc][currLocation]+esal_k[numTruck]*adjacencyMatrixDamage[rc][currLocation]
+                    min_cost = esal_k[numTruck]*adjacencyMatrix[rc][currLocation]+esal_k[numTruck]*adjacencyMatrixDamage[rc][currLocation]
             # add the customer to the path of the truck
             truck_paths.update({numTruck: np.append(truck_paths.get(numTruck), nearest_neighbour)})
             # update current location
@@ -364,9 +359,9 @@ def heuristic():
                 a = currPathtoCalc[p]
                 b = currPathtoCalc[p + 1]
                 #objValue = objValue + adjacencyMatrix[a][b] * (esal_k[truck] + ghg_k[truck])
-                objValue = objValue + adjacencyMatrix[a][b]+esal_k[truck]*adjacencyMatrixDamage[a][b]
+                objValue = objValue + esal_k[numTruck]*adjacencyMatrix[a][b]+esal_k[truck]*adjacencyMatrixDamage[a][b]
                 #truckVal = truckVal + adjacencyMatrix[a][b] * (esal_k[truck] + ghg_k[truck])
-                truckVal=truckVal + adjacencyMatrix[a][b]+esal_k[truck]*adjacencyMatrixDamage[a][b]
+                truckVal=truckVal + esal_k[numTruck]*adjacencyMatrix[a][b]+esal_k[truck]*adjacencyMatrixDamage[a][b]
             costPerTruckPath[truck] = truckVal
 
     print("paths of trucks: ")
@@ -415,7 +410,7 @@ def heuristic():
                     a = currPath[m]
                     q = currPath[m + 1]
                     #distanceSum = distanceSum + adjacencyMatrix[a][q] * (esal_k[truck] + ghg_k[truck])
-                    distanceSum = distanceSum + adjacencyMatrix[a][q]+esal_k[truck]*adjacencyMatrixDamage[a][q]
+                    distanceSum = distanceSum + esal_k[numTruck]*adjacencyMatrix[a][q]+esal_k[truck]*adjacencyMatrixDamage[a][q]
                 if distanceSum < min_dist:
                     min_dist = distanceSum
                     incumbent2_Opt = currPath.copy()
@@ -475,7 +470,7 @@ def heuristic():
                 a = route[p]
                 b = route[p + 1]
                 #cost = cost + adjacencyMatrix[a][b] * (esal_k[truck] + ghg_k[truck])
-                cost=cost + adjacencyMatrix[a][b]+esal_k[truck]*adjacencyMatrixDamage[a][b]
+                cost=cost + esal_k[numTruck]*adjacencyMatrix[a][b]+esal_k[truck]*adjacencyMatrixDamage[a][b]
             return cost
 
     curr_truck_paths = truck_paths.copy()
@@ -486,7 +481,7 @@ def heuristic():
             #truck in use
             numTrucksInUse=numTrucksInUse+1
     # exchange or add into routes
-    for looping in range(0, 100):
+    for looping in range(0, 500):
         # pick 2 random truck routes
         r1 = random2.randint(0, numTrucksInUse-1)
         r2 = random2.randint(0, numTrucksInUse-1)

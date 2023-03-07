@@ -1,0 +1,35 @@
+Sub getduple()
+
+For i = 1 To 772 Step 1
+Range("E" & i).Select
+'Test if cell has a fill color
+  If ActiveCell.Interior.Color <> 16777215 Then
+    'Columns("B:B").Select
+    vari = Range("B" & i).Value
+    For j = i + 1 To 772
+        If Range("B" & j).Value = vari Then
+        Range("I" & i).Value = Range("A" & i).Value
+        Range("J" & i).Value = Range("A" & j).Value
+        
+        End If
+    Next j
+  End If
+
+Next i
+
+End Sub
+
+Sub repl()
+
+For i = 1 To 70
+
+    For j = i + 1 To 1408
+        If Range("G" & i).Value = Range("B" & j).Value Then
+            Range("B" & j).Value = Range("F" & i).Value
+        End If
+        
+    Next j
+    
+Next i
+
+End Sub
