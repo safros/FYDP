@@ -154,7 +154,7 @@ def compare():
             orig_node= getLatAndLog(nonEVPath[i])
             dest_node=getLatAndLog(nonEVPath[i+1])
             loc = [(orig_node[0], orig_node[1]), (dest_node[0], dest_node[1])]
-            folium.PolyLine(loc, color='red',weight=15, opacity=0.6,popup='<b>NonEV</b>').add_to(map2)
+            folium.PolyLine(loc, color='red',weight=15, opacity=0.9,popup='<b>NonEV</b>').add_to(map2)
 
     for s in mapDictionaryEmissions:
         pairing = s[0]
@@ -176,7 +176,7 @@ def compare():
             #orig_node = ox.nearest_nodes(G_drive, orig_node[0], orig_node[1])
             #dest_node = ox.nearest_nodes(G_drive,dest_node[0], dest_node[1])
             loc = [(orig_node[0], orig_node[1]), (dest_node[0], dest_node[1])]
-            folium.PolyLine(loc,color='blue',weight=15, opacity=0.6,popup='<b>EV</b>').add_to(map2)
+            folium.PolyLine(loc,color='grey',weight=10, opacity=0.9,popup='<b>EV</b>').add_to(map2)
             #route=nx.shortest_path(G_drive,orig_node,dest_node)
 
 
