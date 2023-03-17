@@ -96,6 +96,7 @@ def runModel ():
     #call heuristic
     anArray = heuristic()
     list =anArray[4]
+
     #display a map of the final solution
     map1 = folium.Map(location=[43.40205, -80.5])
     body_html = map1.get_root().html.render()
