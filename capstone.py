@@ -1,4 +1,5 @@
 import sys
+import timeit
 #import gurobipy as gp
 #from gurobipy import GRB
 #import math
@@ -99,12 +100,38 @@ def print_result(previous_nodes, shortest_path, start_node, target_node):
     print(" -> ".join(reversed(path)))
     return path
 
+
+# compute binary search time
+def calc_time():
+    SETUP_CODE = '''
+from __main__ import dijkstra_algorithm
+from __main__ import Graph
+from random import randint'''
+
+    TEST_CODE = '''
+nodes = [x for x in range(10000)]
+nodes=list(map(str,nodes))
+init_graph = {}
+for node in nodes:
+    init_graph[node] = {}
+K=nx.erdos_renyi_graph(10000,0.25)
+dijkstra_algorithm(K,200)
+'''
+
+    # timeit.repeat statement
+    times = timeit.repeat(setup=SETUP_CODE,
+                          stmt=TEST_CODE,
+                          repeat=3,
+                          number=10000)
+
+    # printing max exec. time
+    print('Shortest path time: {}'.format(max(times)))
+
 #declare graph
-# nodes = ["R", "O", "M", "L", "RO", "B", "BE", "A"]
-#
-# init_graph = {}
-# for node in nodes:
-#     init_graph[node] = {}
+#nodes = ["R", "O", "M", "L", "RO", "B", "BE", "A"]
+#init_graph = {}
+#for node in nodes:
+    #init_graph[node] = {}
 #
 # init_graph["R"]["O"] = 5
 # init_graph["R"]["M"] = 7
@@ -237,3 +264,6 @@ def print_result(previous_nodes, shortest_path, start_node, target_node):
 #
 # tour = subtour(selected)
 # assert len(tour) == len(CLCto_retailers)
+
+if __name__ == '__main__':
+    calc_time();

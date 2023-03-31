@@ -12,6 +12,7 @@ import folium
 import capstone
 from capstone import dijkstra_algorithm, print_result
 import osmnx as ox
+import time
 from folium import plugins
 import networkx as nx
 import sklearn
@@ -92,10 +93,14 @@ def viewEntries ():
 def runModel ():
     #run model on the data
     #call dijstra's algorithm on the data to create the adj matrix and the shortest path mapping
+    shortestPathstart = time.perf_counter()
     adjacencymatrix = dijstra()
+    shortestPathend = time.perf_counter()
     #call heuristic
     anArray = heuristic()
+    heuristicend = time.perf_counter()
     list =anArray[4]
+
     #display a map of the final solution
     map1 = folium.Map(location=[43.40205, -80.5])
     body_html = map1.get_root().html.render()
@@ -117,6 +122,9 @@ def runModel ():
                 loc=[(origin_node[0],origin_node[1]),(destination_node[0],destination_node[1])]
                 folium.PolyLine(loc, color=rand_color[s],weight=15, opacity=0.8, popup='<b>Vechicle {}</b>'.format(anArray[4].__getitem__(s))).add_to(map1)
     iframe = map1.get_root()._repr_html_()
+    print("start time: " +str(shortestPathstart)+" end time: "+str(shortestPathend)+" heuristic end time: "+str(heuristicend))
+    print(f"shortest path took in {shortestPathend - shortestPathstart:0.4f} seconds")
+    print(f"heuristic path took in {heuristicend - shortestPathend:0.4f} seconds")
     return render_template('runModel.html', iframe=iframe)
 
 @app.route("/compareEVtoNonEV")
@@ -154,7 +162,7 @@ def compare():
             orig_node= getLatAndLog(nonEVPath[i])
             dest_node=getLatAndLog(nonEVPath[i+1])
             loc = [(orig_node[0], orig_node[1]), (dest_node[0], dest_node[1])]
-            folium.PolyLine(loc, color='red',weight=15, opacity=0.6,popup='<b>NonEV</b>').add_to(map2)
+            folium.PolyLine(loc, color='red',weight=15, opacity=0.9,popup='<b>NonEV</b>').add_to(map2)
 
     for s in mapDictionaryEmissions:
         pairing = s[0]
@@ -176,7 +184,7 @@ def compare():
             #orig_node = ox.nearest_nodes(G_drive, orig_node[0], orig_node[1])
             #dest_node = ox.nearest_nodes(G_drive,dest_node[0], dest_node[1])
             loc = [(orig_node[0], orig_node[1]), (dest_node[0], dest_node[1])]
-            folium.PolyLine(loc,color='blue',weight=15, opacity=0.6,popup='<b>EV</b>').add_to(map2)
+            folium.PolyLine(loc,color='grey',weight=10, opacity=0.9,popup='<b>EV</b>').add_to(map2)
             #route=nx.shortest_path(G_drive,orig_node,dest_node)
 
 
