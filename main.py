@@ -12,6 +12,7 @@ import folium
 import capstone
 from capstone import dijkstra_algorithm, print_result
 import osmnx as ox
+import time
 from folium import plugins
 import networkx as nx
 import sklearn
@@ -92,9 +93,12 @@ def viewEntries ():
 def runModel ():
     #run model on the data
     #call dijstra's algorithm on the data to create the adj matrix and the shortest path mapping
+    shortestPathstart = time.perf_counter()
     adjacencymatrix = dijstra()
+    shortestPathend = time.perf_counter()
     #call heuristic
     anArray = heuristic()
+    heuristicend = time.perf_counter()
     list =anArray[4]
 
     #display a map of the final solution
@@ -118,6 +122,9 @@ def runModel ():
                 loc=[(origin_node[0],origin_node[1]),(destination_node[0],destination_node[1])]
                 folium.PolyLine(loc, color=rand_color[s],weight=15, opacity=0.8, popup='<b>Vechicle {}</b>'.format(anArray[4].__getitem__(s))).add_to(map1)
     iframe = map1.get_root()._repr_html_()
+    print("start time: " +str(shortestPathstart)+" end time: "+str(shortestPathend)+" heuristic end time: "+str(heuristicend))
+    print(f"shortest path took in {shortestPathend - shortestPathstart:0.4f} seconds")
+    print(f"heuristic path took in {heuristicend - shortestPathend:0.4f} seconds")
     return render_template('runModel.html', iframe=iframe)
 
 @app.route("/compareEVtoNonEV")
